@@ -1,0 +1,200 @@
+/* Full container */
+.auth-bg-container {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #0a021f;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+/* Animated gradient layer */
+.animated-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, #5b0be0, #ff006a, #ffab00);
+  background-size: 300% 300%;
+  animation: gradientMove 12s ease infinite;
+  opacity: 0.25;
+  z-index: 1;
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Floating blurred blobs */
+.orb {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  filter: blur(140px);
+  opacity: 0.45;
+  border-radius: 50%;
+  animation: float 10s infinite ease-in-out alternate;
+  z-index: 1;
+}
+
+.orb1 {
+  top: 10%;
+  left: 10%;
+  background: #ff00c8;
+  animation-duration: 11s;
+}
+.orb2 {
+  bottom: 12%;
+  right: 8%;
+  background: #5b0be0;
+  animation-duration: 13s;
+}
+.orb3 {
+  top: 50%;
+  right: 20%;
+  background: #ffab00;
+  animation-duration: 15s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) translateX(0px);
+  }
+  100% {
+    transform: translateY(-40px) translateX(30px);
+  }
+}
+
+/* Particle dots */
+.particles::before,
+.particles::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#ffffff33 2px, transparent 2px);
+  background-size: 40px 40px;
+  opacity: 0.12;
+  animation: drift 18s linear infinite;
+}
+
+.particles::after {
+  animation-duration: 28s;
+  opacity: 0.09;
+}
+
+@keyframes drift {
+  from {
+    transform: translateY(0px);
+  }
+  to {
+    transform: translateY(-200px);
+  }
+}
+
+/* ----- Unify Events branding ----- */
+.unify-title {
+  z-index: 5;
+  margin-bottom: 25px;
+}
+
+.unify-gradient {
+  background: linear-gradient(90deg, #ff3ab5, #ffcc33, #b300ff);
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 48px;
+  font-weight: 800;
+}
+
+/* ----- Card ----- */
+.auth-card {
+  z-index: 5;
+  width: 100%;
+  max-width: 430px;
+  background: white;
+  border-radius: 20px;
+  padding: 38px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.auth-title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.auth-sub {
+  text-align: center;
+  color: #666;
+  margin-bottom: 28px;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  top: 13px;
+  width: 20px;
+  height: 20px;
+  color: #999;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 12px 14px 12px 44px;
+  border-radius: 10px;
+  border: 1.5px solid #ccc;
+  transition: 0.2s;
+}
+
+.auth-input:focus {
+  border-color: #7b2ff7;
+  box-shadow: 0 0 0 3px #7b2ff733;
+  outline: none;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  background: linear-gradient(135deg, #7b2ff7, #ff4dcc);
+  color: white;
+  transition: 0.2s;
+}
+
+.auth-btn:hover {
+  filter: brightness(1.1);
+}
+
+.auth-error {
+  color: red;
+  font-size: 14px;
+  text-align: center;
+}
+
+.login-text {
+  text-align: center;
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.login-link {
+  color: #7b2ff7;
+  cursor: pointer;
+  font-weight: 600;
+}

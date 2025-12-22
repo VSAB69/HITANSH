@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.rec-btn {
+  @apply flex items-center gap-2 px-4 py-2 rounded-lg text-white
+         transition transform active:scale-95 shadow-md;
+}
