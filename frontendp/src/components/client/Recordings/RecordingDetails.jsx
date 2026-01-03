@@ -1,37 +1,45 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import { appApiClient } from "../../../api/endpoints";
 
 const RecordingDetails = ({ recording }) => {
   const [audioUrl, setAudioUrl] = useState(null);
+  const refreshTimer = useRef(null);
 
-  useEffect(() => {
+  // ─────────────────────────────
+  // Fetch + auto-refresh signed URL
+  // ─────────────────────────────
+  const fetchSignedUrl = async () => {
     if (!recording.audio_key) return;
 
-    let cancelled = false;
+    try {
+      const res = await appApiClient.get(
+        `/api/media/secure/?key=${encodeURIComponent(recording.audio_key)}`
+      );
 
-    const loadAudio = async () => {
-      try {
-        const res = await appApiClient.get(
-          `/api/media/secure/?key=${encodeURIComponent(recording.audio_key)}`
-        );
+      setAudioUrl(res.data.url);
 
-        if (!cancelled) {
-          setAudioUrl(res.data.url);
-        }
-      } catch (err) {
-        console.error("Failed to load recording", err);
-      }
-    };
+      // Refresh at 80% of expiry
+      const refreshInMs = res.data.expires_in * 0.8 * 1000;
+      clearTimeout(refreshTimer.current);
+      refreshTimer.current = setTimeout(fetchSignedUrl, refreshInMs);
+    } catch (err) {
+      console.error("Failed to load recording", err);
+    }
+  };
 
-    loadAudio();
+  useEffect(() => {
+    fetchSignedUrl();
 
     return () => {
-      cancelled = true;
+      clearTimeout(refreshTimer.current);
     };
   }, [recording.audio_key]);
 
+  // ─────────────────────────────
+  // Download
+  // ─────────────────────────────
   const download = () => {
     if (!audioUrl) return;
 

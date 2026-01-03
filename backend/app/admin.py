@@ -1,75 +1,93 @@
 from django.contrib import admin
-from .models import *
+from .models import Song, Artist, Recording
+from .admin_utils import (
+    signed_image_preview,
+    signed_audio_preview,
+    signed_file_link,
+)
 
+# ─────────────────────────────────────────────
+# Artist
+# ─────────────────────────────────────────────
 
 @admin.register(Artist)
 class ArtistAdmin(admin.ModelAdmin):
-    list_display = ("id", "name")
     search_fields = ("name",)
 
 
-class SongLyricLineInline(admin.TabularInline):
-    model = SongLyricLine
-    extra = 0
-    readonly_fields = ("timestamp", "text")
-    can_delete = False
-
-from django.contrib import admin
-from .models import Song, Artist, SongLyricLine
-from app.utils.lrc_parser import parse_lrc
-
-
+# ─────────────────────────────────────────────
+# Song
+# ─────────────────────────────────────────────
 
 @admin.register(Song)
 class SongAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "artist", "genre", "language", "duration")
-    readonly_fields = ("uploaded_by",)
+    list_display = (
+        "title",
+        "artist",
+        "language",
+        "cover_preview",
+        "audio_preview",
+        "duration",
+    )
 
-    def save_model(self, request, obj, form, change):
-        """
-        Called when saving via admin panel.
-        We must parse the LRC file here because DRF serializer is NOT used.
-        """
-        is_new = obj.pk is None  # Detect new uploads
+    readonly_fields = (
+        "cover_preview",
+        "audio_preview",
+        "lrc_preview",
+    )
 
-        super().save_model(request, obj, form, change)
+    fields = (
+        "title",
+        "artist",
+        "language",
+        "genre",
+        "duration",
+        "cover_image",
+        "cover_preview",
+        "audio_file",
+        "audio_preview",
+        "lrc_file",
+        "lrc_preview",
+    )
 
-        # Assign uploader
-        if is_new:
-            obj.uploaded_by = request.user
-            obj.save()
+    def cover_preview(self, obj):
+        return signed_image_preview(obj.cover_image)
 
-        # PARSE LRC ONLY IF FILE WAS UPLOADED OR CHANGED
-        if "lrc_file" in form.changed_data:
-            # Remove old lyrics
-            SongLyricLine.objects.filter(song=obj).delete()
+    cover_preview.short_description = "Cover"
 
-            if obj.lrc_file:
-                lrc_text = obj.lrc_file.read().decode("utf-8-sig")
-                parsed = parse_lrc(lrc_text)
+    def audio_preview(self, obj):
+        return signed_audio_preview(obj.audio_file)
 
-                bulk_list = [
-                    SongLyricLine(song=obj, timestamp=line["timestamp"], text=line["text"])
-                    for line in parsed
-                ]
-                SongLyricLine.objects.bulk_create(bulk_list)
+    audio_preview.short_description = "Audio"
 
+    def lrc_preview(self, obj):
+        return signed_file_link(obj.lrc_file, label="View Lyrics")
 
-
-@admin.register(SongLyricLine)
-class SongLyricLineAdmin(admin.ModelAdmin):
-    list_display = ("id", "song", "timestamp", "text")
-    list_filter = ("song",)
-    search_fields = ("text", "song__title")
-
-
-
-from django.contrib import admin
-from .models import Recording
+    lrc_preview.short_description = "Lyrics (.lrc)"
 
 
 @admin.register(Recording)
 class RecordingAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "song", "created_at")
-    list_filter = ("song", "created_at")
-    search_fields = ("user__username", "song__title")
+    list_display = (
+        "user",
+        "song",
+        "created_at",
+        "duration",
+        "audio_preview",
+    )
+
+    readonly_fields = ("audio_preview",)
+
+    fields = (
+        "user",
+        "song",
+        "duration",
+        "audio_file",
+        "audio_preview",
+        "created_at",
+    )
+
+    def audio_preview(self, obj):
+        return signed_audio_preview(obj.audio_file)
+
+    audio_preview.short_description = "Recording Preview"

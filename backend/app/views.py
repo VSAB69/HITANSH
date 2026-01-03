@@ -95,12 +95,12 @@ class SecureMediaView(APIView):
             return Response({"error": "Forbidden"}, status=403)
 
         # Generate short-lived signed URL
-        signed_url = generate_signed_url(
-            key=key,
-            expires=60  # seconds
-        )
+        signed_url = generate_signed_url(key=key, expires=300)
 
-        return Response({"url": signed_url})
+        return Response({
+    "url": signed_url,
+    "expires_in": 300
+})
 
 
 

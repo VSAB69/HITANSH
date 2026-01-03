@@ -10,45 +10,61 @@ import {
 import { appApiClient } from "../../../api/endpoints";
 
 const AudioPlayer = ({ audioKey, audioRef }) => {
+  const [audioUrl, setAudioUrl] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setMuted] = useState(false);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   const progressRef = useRef(null);
+  const refreshTimer = useRef(null);
 
   // ─────────────────────────────
-  // Load signed audio ONCE
+  // Fetch + auto-refresh signed URL
   // ─────────────────────────────
+  const fetchSignedUrl = async () => {
+    if (!audioKey) return;
+
+    const res = await appApiClient.get(
+      `/api/media/secure/?key=${encodeURIComponent(audioKey)}`
+    );
+
+    setAudioUrl(res.data.url);
+
+    // Refresh at 80% of expiry
+    const refreshInMs = res.data.expires_in * 0.8 * 1000;
+    clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(fetchSignedUrl, refreshInMs);
+  };
+
   useEffect(() => {
-    if (!audioKey || !audioRef.current) return;
-
-    let cancelled = false;
-
-    const loadAudio = async () => {
-      try {
-        const res = await appApiClient.get(
-          `/api/media/secure/?key=${encodeURIComponent(audioKey)}`
-        );
-
-        if (!cancelled && audioRef.current) {
-          audioRef.current.src = res.data.url;
-          audioRef.current.load();
-        }
-      } catch (err) {
-        console.error("Failed to load audio", err);
-      }
-    };
-
-    loadAudio();
+    fetchSignedUrl();
 
     return () => {
-      cancelled = true;
+      clearTimeout(refreshTimer.current);
     };
   }, [audioKey]);
+
+  // ─────────────────────────────
+  // Apply new signed URL safely
+  // ─────────────────────────────
+  useEffect(() => {
+    if (!audioUrl || !audioRef.current) return;
+
+    const audio = audioRef.current;
+    const wasPlaying = !audio.paused;
+    const time = audio.currentTime;
+
+    audio.src = audioUrl;
+    audio.load();
+
+    if (wasPlaying) {
+      audio.currentTime = time;
+      audio.play();
+    }
+  }, [audioUrl]);
 
   // ─────────────────────────────
   // Audio event sync
