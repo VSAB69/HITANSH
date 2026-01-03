@@ -139,3 +139,29 @@ class RecordingUploadSerializer(serializers.ModelSerializer):
             "audio_file",
         ]
 
+
+class SongListSerializer(serializers.ModelSerializer):
+    artist = ArtistSerializer(read_only=True)
+    cover_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Song
+        fields = [
+            "id",
+            "title",
+            "artist",
+            "language",
+            "genre",
+            "duration",
+            "cover_url",
+        ]
+
+    def get_cover_url(self, obj):
+        if not obj.cover_image:
+            return None
+
+        from .utils.r2 import generate_signed_url
+        return generate_signed_url(
+            key=obj.cover_image.name,
+            expires=600  # 10 minutes (perfect for list pages)
+        )

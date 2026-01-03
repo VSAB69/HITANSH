@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Play } from "lucide-react";
-import { appApiClient } from "../../../api/endpoints";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -11,33 +10,6 @@ const cardVariants = {
 
 const SongCard = ({ song }) => {
   const navigate = useNavigate();
-  const [coverUrl, setCoverUrl] = useState(null);
-
-  useEffect(() => {
-    if (!song.cover_key) return;
-
-    let cancelled = false;
-
-    const loadCover = async () => {
-      try {
-        const res = await appApiClient.get(
-          `/api/media/secure/?key=${encodeURIComponent(song.cover_key)}`
-        );
-
-        if (!cancelled) {
-          setCoverUrl(res.data.url);
-        }
-      } catch (err) {
-        console.error("Failed to load cover image", err);
-      }
-    };
-
-    loadCover();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [song.cover_key]);
 
   return (
     <motion.div
@@ -52,9 +24,9 @@ const SongCard = ({ song }) => {
       "
     >
       <div className="relative aspect-[1/1] overflow-hidden">
-        {coverUrl ? (
+        {song.cover_url ? (
           <img
-            src={coverUrl}
+            src={song.cover_url}
             crossOrigin="anonymous"
             alt={song.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

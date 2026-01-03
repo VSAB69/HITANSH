@@ -101,3 +101,10 @@ class SecureMediaView(APIView):
         )
 
         return Response({"url": signed_url})
+
+
+
+class SongListView(generics.ListAPIView):
+    queryset = Song.objects.select_related("artist")
+    serializer_class = SongListSerializer
+    permission_classes = [permissions.IsAuthenticated]
