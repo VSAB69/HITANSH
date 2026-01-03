@@ -38,6 +38,17 @@ class SongLyricLine(models.Model):
 from django.db import models
 from django.conf import settings
 from pydub import AudioSegment
+from django.db import models
+from django.conf import settings
+from pydub import AudioSegment
+from tempfile import NamedTemporaryFile
+
+import os
+import tempfile
+from django.db import models
+from django.conf import settings
+from pydub import AudioSegment
+
 
 class Recording(models.Model):
     user = models.ForeignKey(
@@ -55,13 +66,25 @@ class Recording(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        # Auto-calculate duration once file exists
+        # Calculate duration BEFORE saving
         if self.audio_file and not self.duration:
-            audio = AudioSegment.from_file(self.audio_file.path)
-            self.duration = round(len(audio) / 1000, 2)
-            super().save(update_fields=["duration"])
+            # Create temp file safely on Windows
+            with tempfile.NamedTemporaryFile(
+                suffix=".webm",
+                delete=False
+            ) as tmp:
+                for chunk in self.audio_file.chunks():
+                    tmp.write(chunk)
+                tmp_path = tmp.name
+
+            try:
+                audio = AudioSegment.from_file(tmp_path)
+                self.duration = round(len(audio) / 1000, 2)
+            finally:
+                # Always delete temp file
+                os.remove(tmp_path)
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.user} - {self.song.title}"

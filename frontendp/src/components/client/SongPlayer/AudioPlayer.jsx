@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   FaPlay,
   FaPause,
@@ -7,13 +7,12 @@ import {
   FaForward,
   FaBackward,
 } from "react-icons/fa";
+import { appApiClient } from "../../../api/endpoints";
 
-import AudioRecorder from "./AudioRecorder";
-
-const AudioPlayer = ({ audioUrl, audioRef }) => {
+const AudioPlayer = ({ audioKey, audioRef }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(1);
+  const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setMuted] = useState(false);
@@ -21,46 +20,72 @@ const AudioPlayer = ({ audioUrl, audioRef }) => {
 
   const progressRef = useRef(null);
 
-  // Setup duration
+  // ─────────────────────────────
+  // Load signed audio ONCE
+  // ─────────────────────────────
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.onloadedmetadata = () => {
-        setDuration(audioRef.current.duration);
-      };
-    }
-  }, []);
+    if (!audioKey || !audioRef.current) return;
 
-  // Sync progress
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (audioRef.current) {
-        setCurrentTime(audioRef.current.currentTime);
-        setProgress(
-          (audioRef.current.currentTime / audioRef.current.duration) * 100
+    let cancelled = false;
+
+    const loadAudio = async () => {
+      try {
+        const res = await appApiClient.get(
+          `/api/media/secure/?key=${encodeURIComponent(audioKey)}`
         );
+
+        if (!cancelled && audioRef.current) {
+          audioRef.current.src = res.data.url;
+          audioRef.current.load();
+        }
+      } catch (err) {
+        console.error("Failed to load audio", err);
       }
-    }, 200);
-    return () => clearInterval(interval);
+    };
+
+    loadAudio();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [audioKey]);
+
+  // ─────────────────────────────
+  // Audio event sync
+  // ─────────────────────────────
+  useEffect(() => {
+    if (!audioRef.current) return;
+    const audio = audioRef.current;
+
+    const onLoaded = () => setDuration(audio.duration || 0);
+    const onTime = () => {
+      setCurrentTime(audio.currentTime);
+      setProgress((audio.currentTime / audio.duration) * 100 || 0);
+    };
+    const onEnded = () => setIsPlaying(false);
+
+    audio.addEventListener("loadedmetadata", onLoaded);
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("ended", onEnded);
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", onLoaded);
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("ended", onEnded);
+    };
   }, []);
 
+  // ─────────────────────────────
+  // Controls
+  // ─────────────────────────────
   const togglePlay = async () => {
     if (!audioRef.current) return;
-
-    // 🔥 IMPORTANT: Resume audio context if suspended
-    const audioContext = window.AudioContext || window.webkitAudioContext;
-
-    if (audioContext) {
-      const ctx = new audioContext();
-      if (ctx.state === "suspended") {
-        await ctx.resume();
-      }
-    }
 
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      await audioRef.current.play(); // await is IMPORTANT
+      await audioRef.current.play();
       setIsPlaying(true);
     }
   };
@@ -69,6 +94,18 @@ const AudioPlayer = ({ audioUrl, audioRef }) => {
     if (!audioRef.current) return;
     audioRef.current.muted = !isMuted;
     setMuted(!isMuted);
+  };
+
+  const skip = (seconds) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime += seconds;
+  };
+
+  const handleSeek = (e) => {
+    if (!audioRef.current) return;
+    const rect = progressRef.current.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    audioRef.current.currentTime = duration * percent;
   };
 
   const formatTime = (sec) => {
@@ -80,108 +117,42 @@ const AudioPlayer = ({ audioUrl, audioRef }) => {
     return `${m}:${s}`;
   };
 
-  const handleSeek = (e) => {
-    const rect = progressRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const width = rect.width;
-    const percent = clickX / width;
-    const newTime = duration * percent;
-    audioRef.current.currentTime = newTime;
-    setCurrentTime(newTime);
-  };
-
-  const skip = (seconds) => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime += seconds;
-  };
-
   return (
     <div className="relative backdrop-blur-xl bg-gray-900/40 border border-purple-500/20 rounded-2xl p-6 shadow-xl shadow-purple-900/40">
-      {/* Audio Element */}
-      <audio ref={audioRef}>
-        <source src={audioUrl} type="audio/mpeg" />
-      </audio>
-
-      {/* Controls */}
       <div className="flex items-center justify-between">
-        {/* Backward 10s */}
-        <button
-          onClick={() => skip(-10)}
-          className="control-btn hover:bg-purple-700"
-        >
-          <FaBackward size={20} />
+        <button onClick={() => skip(-10)} className="control-btn">
+          <FaBackward />
         </button>
 
-        {/* Play / Pause */}
         <button
           onClick={togglePlay}
-          className="w-14 h-14 flex items-center justify-center rounded-full bg-purple-600 hover:bg-purple-500 transition transform hover:scale-110 shadow-lg shadow-purple-900/50 active:scale-95"
+          className="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center"
         >
-          {isPlaying ? (
-            <FaPause className="text-white text-2xl" />
-          ) : (
-            <FaPlay className="text-white text-2xl ml-1" />
-          )}
+          {isPlaying ? <FaPause /> : <FaPlay className="ml-1" />}
         </button>
 
-        {/* Forward 10s */}
-        <button
-          onClick={() => skip(10)}
-          className="control-btn hover:bg-purple-700"
-        >
-          <FaForward size={20} />
+        <button onClick={() => skip(10)} className="control-btn">
+          <FaForward />
         </button>
 
-        {/* Volume */}
-        <div className="relative">
-          <button
-            onClick={() => setShowVolumeSlider(!showVolumeSlider)}
-            className="control-btn hover:bg-purple-700 ml-2"
-          >
-            {isMuted || volume === 0 ? (
-              <FaVolumeMute size={20} />
-            ) : (
-              <FaVolumeUp size={20} />
-            )}
-          </button>
-
-          {/* Volume Slider Popup */}
-          {showVolumeSlider && (
-            <div className="absolute right-0 bottom-12 bg-gray-900/70 border border-purple-400/30 py-2 px-3 rounded-xl shadow-lg animate-fadeIn">
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.02"
-                value={volume}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  setVolume(v);
-                  audioRef.current.volume = v;
-                  setMuted(v === 0);
-                }}
-                className="accent-purple-400 w-28"
-              />
-            </div>
-          )}
-        </div>
+        <button onClick={toggleMute} className="control-btn">
+          {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+        </button>
       </div>
 
-      {/* Progress Bar */}
-      <div className="w-full mt-6">
+      <div className="mt-4">
         <div
           ref={progressRef}
           onClick={handleSeek}
-          className="w-full bg-gray-700/40 h-3 rounded-full overflow-hidden cursor-pointer hover:h-4 transition-all"
+          className="h-3 bg-gray-700 rounded cursor-pointer"
         >
           <div
-            className="bg-purple-400 h-full transition-all duration-150 ease-linear"
+            className="h-full bg-purple-400"
             style={{ width: `${progress}%` }}
-          ></div>
+          />
         </div>
 
-        {/* Time Display */}
-        <div className="flex justify-between text-sm text-purple-300 mt-2">
+        <div className="flex justify-between text-sm mt-2 text-purple-300">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>

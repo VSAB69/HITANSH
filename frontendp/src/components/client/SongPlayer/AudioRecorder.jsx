@@ -12,6 +12,7 @@ import StartRecordingModal from "./StartRecordingModal";
 
 const AudioRecorder = ({ songId, audioRef }) => {
   const mediaRecorderRef = useRef(null);
+  const mediaStreamRef = useRef(null);
   const audioChunksRef = useRef([]);
 
   const [recordingState, setRecordingState] = useState("idle");
@@ -19,20 +20,34 @@ const AudioRecorder = ({ songId, audioRef }) => {
   const [audioURL, setAudioURL] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
-
   const [showModal, setShowModal] = useState(false);
 
-  // ---------- INTERNAL HELPERS ----------
+  // ─────────────────────────────
+  // Helpers
+  // ─────────────────────────────
+  const cleanupStream = () => {
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
+  };
+
   const resetRecording = () => {
+    cleanupStream();
     setRecordingState("idle");
     setAudioBlob(null);
     setAudioURL(null);
     setSuccess(false);
   };
 
+  // ─────────────────────────────
+  // Recording
+  // ─────────────────────────────
   const startMediaRecorder = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
+    mediaStreamRef.current = stream;
+
+    const recorder = new MediaRecorder(stream, {
+      mimeType: "audio/webm",
+    });
 
     mediaRecorderRef.current = recorder;
     audioChunksRef.current = [];
@@ -45,16 +60,20 @@ const AudioRecorder = ({ songId, audioRef }) => {
       const blob = new Blob(audioChunksRef.current, {
         type: "audio/webm",
       });
+
       setAudioBlob(blob);
       setAudioURL(URL.createObjectURL(blob));
       setRecordingState("stopped");
+      cleanupStream();
     };
 
     recorder.start();
     setRecordingState("recording");
   };
 
-  // ---------- USER ACTIONS ----------
+  // ─────────────────────────────
+  // User Actions
+  // ─────────────────────────────
   const handleRecordClick = () => {
     if (!audioRef.current) return;
     setShowModal(true);
@@ -91,22 +110,26 @@ const AudioRecorder = ({ songId, audioRef }) => {
     if (!audioBlob || uploading) return;
 
     setUploading(true);
+
     try {
       const formData = new FormData();
       formData.append("song", songId);
-      formData.append("audio_file", audioBlob);
+      formData.append("audio_file", audioBlob, `recording-${Date.now()}.webm`);
+
       await ClientService.uploadRecording(formData);
       setSuccess(true);
-    } catch {
+    } catch (err) {
       alert("Failed to upload recording");
     } finally {
       setUploading(false);
     }
   };
 
+  // ─────────────────────────────
+  // UI
+  // ─────────────────────────────
   return (
     <>
-      {/* START MODAL */}
       {showModal && (
         <StartRecordingModal
           currentTime={audioRef.current?.currentTime || 0}

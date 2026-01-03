@@ -1,5 +1,20 @@
 from rest_framework import serializers
-from .models import Song, SongLyricLine, Artist
+from .models import Song, SongLyricLine, Artist, Recording
+
+
+# ─────────────────────────────────────────────
+# Artist
+# ─────────────────────────────────────────────
+
+class ArtistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Artist
+        fields = ["id", "name"]
+
+
+# ─────────────────────────────────────────────
+# Song Lyrics Lines
+# ─────────────────────────────────────────────
 
 class SongLyricLineSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,24 +22,59 @@ class SongLyricLineSerializer(serializers.ModelSerializer):
         fields = ["timestamp", "text"]
 
 
+# ─────────────────────────────────────────────
+# Song (READ – SECURE)
+# ─────────────────────────────────────────────
+
 class SongSerializer(serializers.ModelSerializer):
     lyrics = SongLyricLineSerializer(many=True, read_only=True)
+    artist = ArtistSerializer(read_only=True)
+
+    cover_key = serializers.SerializerMethodField()
+    audio_key = serializers.SerializerMethodField()
+    lrc_key = serializers.SerializerMethodField()
 
     class Meta:
         model = Song
         fields = [
-            "id", "title", "artist", "language", "genre",
-            "cover_image", "audio_file", "duration", "lyrics"
+            "id",
+            "title",
+            "artist",
+            "language",
+            "genre",
+            "duration",
+            "cover_key",
+            "audio_key",
+            "lrc_key",
+            "lyrics",
         ]
 
+    def get_cover_key(self, obj):
+        return obj.cover_image.name if obj.cover_image else None
+
+    def get_audio_key(self, obj):
+        return obj.audio_file.name if obj.audio_file else None
+
+    def get_lrc_key(self, obj):
+        return obj.lrc_file.name if obj.lrc_file else None
+
+
+# ─────────────────────────────────────────────
+# Song (UPLOAD)
+# ─────────────────────────────────────────────
 
 class SongUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
         fields = [
-            "title", "artist", "language", "genre",
-            "cover_image", "audio_file", "lrc_file",
-            "duration"
+            "title",
+            "artist",
+            "language",
+            "genre",
+            "cover_image",
+            "audio_file",
+            "lrc_file",
+            "duration",
         ]
 
     def create(self, validated_data):
@@ -33,29 +83,34 @@ class SongUploadSerializer(serializers.ModelSerializer):
 
         lrc_file = validated_data.get("lrc_file")
 
-        # Save the song first
+        # Save song first (uploads to R2)
         song = Song.objects.create(**validated_data)
 
-        # Parse the LRC
+        # Read and reset pointer
         lrc_text = lrc_file.read().decode("utf-8")
+        lrc_file.seek(0)
+
         parsed_lines = parse_lrc(lrc_text)
 
-        # Create lyric lines
-        bulk_list = [
-            SongLyricLine(song=song, timestamp=line["timestamp"], text=line["text"])
+        SongLyricLine.objects.bulk_create([
+            SongLyricLine(
+                song=song,
+                timestamp=line["timestamp"],
+                text=line["text"]
+            )
             for line in parsed_lines
-        ]
-        SongLyricLine.objects.bulk_create(bulk_list)
+        ])
 
         return song
 
 
-from rest_framework import serializers
-from .models import Recording
+# ─────────────────────────────────────────────
+# Recording (READ – SECURE)
+# ─────────────────────────────────────────────
 
 class RecordingSerializer(serializers.ModelSerializer):
     song_title = serializers.CharField(source="song.title", read_only=True)
-    
+    audio_key = serializers.SerializerMethodField()
 
     class Meta:
         model = Recording
@@ -63,7 +118,24 @@ class RecordingSerializer(serializers.ModelSerializer):
             "id",
             "song",
             "song_title",
-            "audio_file",
+            "audio_key",
             "duration",
             "created_at",
         ]
+
+    def get_audio_key(self, obj):
+        return obj.audio_file.name if obj.audio_file else None
+
+
+# ─────────────────────────────────────────────
+# Recording (UPLOAD)
+# ─────────────────────────────────────────────
+
+class RecordingUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recording
+        fields = [
+            "song",
+            "audio_file",
+        ]
+
