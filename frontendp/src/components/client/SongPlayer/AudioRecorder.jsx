@@ -7,10 +7,18 @@ import {
   FaRedo,
   FaSpinner,
 } from "react-icons/fa";
+import { Sliders } from "lucide-react";
 import ClientService from "../ClientService";
 import StartRecordingModal from "./StartRecordingModal";
+import MixingModal from "../Mixing/MixingModal";
 
-const AudioRecorder = ({ songId, audioRef }) => {
+const AudioRecorder = ({
+  songId,
+  audioRef,
+  karaokeUrl,
+  songTitle,
+  songDuration,
+}) => {
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -21,6 +29,8 @@ const AudioRecorder = ({ songId, audioRef }) => {
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showMixingModal, setShowMixingModal] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
 
   // ─────────────────────────────
   // Helpers
@@ -36,6 +46,7 @@ const AudioRecorder = ({ songId, audioRef }) => {
     setAudioBlob(null);
     setAudioURL(null);
     setSuccess(false);
+    setRecordingDuration(0);
   };
 
   // ─────────────────────────────
@@ -64,6 +75,12 @@ const AudioRecorder = ({ songId, audioRef }) => {
       setAudioBlob(blob);
       setAudioURL(URL.createObjectURL(blob));
       setRecordingState("stopped");
+
+      // Calculate recording duration from audio element position
+      if (audioRef.current) {
+        setRecordingDuration(audioRef.current.currentTime);
+      }
+
       cleanupStream();
     };
 
@@ -104,6 +121,7 @@ const AudioRecorder = ({ songId, audioRef }) => {
 
   const stopRecording = () => {
     mediaRecorderRef.current?.stop();
+    audioRef.current?.pause();
   };
 
   const saveRecording = async () => {
@@ -135,6 +153,18 @@ const AudioRecorder = ({ songId, audioRef }) => {
           currentTime={audioRef.current?.currentTime || 0}
           onChoose={handleStartChoice}
           onClose={() => setShowModal(false)}
+        />
+      )}
+
+      {/* Mixing Modal - only render when open to prevent AbortError */}
+      {showMixingModal && (
+        <MixingModal
+          isOpen={true}
+          onClose={() => setShowMixingModal(false)}
+          recordingUrl={audioURL}
+          karaokeUrl={karaokeUrl}
+          songTitle={songTitle}
+          recordingDuration={recordingDuration || songDuration}
         />
       )}
 
@@ -185,11 +215,10 @@ const AudioRecorder = ({ songId, audioRef }) => {
               <button
                 onClick={saveRecording}
                 disabled={uploading}
-                className={`rec-btn ${
-                  uploading
-                    ? "bg-purple-400 cursor-not-allowed"
-                    : "bg-purple-600 hover:bg-purple-500"
-                }`}
+                className={`rec-btn ${uploading
+                  ? "bg-purple-400 cursor-not-allowed"
+                  : "bg-purple-600 hover:bg-purple-500"
+                  }`}
               >
                 {uploading ? (
                   <FaSpinner className="animate-spin" />
@@ -197,6 +226,16 @@ const AudioRecorder = ({ songId, audioRef }) => {
                   <FaSave />
                 )}
                 Save
+              </button>
+
+              {/* NEW: Mix Button */}
+              <button
+                onClick={() => setShowMixingModal(true)}
+                disabled={!karaokeUrl}
+                className="rec-btn bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Sliders className="w-4 h-4" />
+                Mix
               </button>
 
               <button

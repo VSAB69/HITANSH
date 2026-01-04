@@ -10,6 +10,7 @@ const SongPlayerPage = () => {
   const { id } = useParams();
   const [song, setSong] = useState(null);
   const [coverUrl, setCoverUrl] = useState(null);
+  const [karaokeUrl, setKaraokeUrl] = useState(null);
 
   // ✅ SINGLE SOURCE OF TRUTH
   const audioRef = useRef(null);
@@ -27,6 +28,15 @@ const SongPlayerPage = () => {
       .get(`/api/media/secure/?key=${encodeURIComponent(song.cover_key)}`)
       .then((res) => setCoverUrl(res.data.url));
   }, [song?.cover_key]);
+
+  // Fetch karaoke audio URL for mixing
+  useEffect(() => {
+    if (!song?.audio_key) return;
+
+    appApiClient
+      .get(`/api/media/secure/?key=${encodeURIComponent(song.audio_key)}`)
+      .then((res) => setKaraokeUrl(res.data.url));
+  }, [song?.audio_key]);
 
   if (!song) {
     return <div className="text-white text-center mt-20">Loading...</div>;
@@ -60,7 +70,13 @@ const SongPlayerPage = () => {
 
       {/* Recorder */}
       <div className="w-full max-w-2xl mt-8">
-        <AudioRecorder songId={song.id} audioRef={audioRef} />
+        <AudioRecorder
+          songId={song.id}
+          audioRef={audioRef}
+          karaokeUrl={karaokeUrl}
+          songTitle={song.title}
+          songDuration={song.duration}
+        />
       </div>
 
       {/* Lyrics */}
