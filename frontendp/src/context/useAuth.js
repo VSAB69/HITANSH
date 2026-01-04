@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     email,
     password,
     confirm_password,
-    role = "participant"
+    role = "client"
   ) => {
     try {
       if (password === confirm_password) {

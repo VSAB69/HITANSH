@@ -2,24 +2,35 @@ from rest_framework import serializers
 from .models import User, Todo
 from rest_framework_simplejwt.tokens import RefreshToken
 
+
+from rest_framework import serializers
+from .models import User
+
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    role = serializers.ChoiceField(choices=User.ROLE_CHOICES, required=False)
+
+    role = serializers.ChoiceField(
+        choices=User.ROLE_CHOICES,
+        required=False,
+        allow_blank=True
+    )
 
     class Meta:
         model = User
         fields = ['username', 'email', 'password', 'role']
 
-    def create(self, validated_data):
-        # remove role if not provided, fallback to default (participant)
-        role = validated_data.get('role', 'participant')
+    def validate_role(self, value):
+        # If frontend sends "" → default to client
+        if value in ("", None):
+            return "client"
+        return value
 
-        user = User(
-            username=validated_data['username'],
-            email=validated_data.get('email', ''),
-            role=role
-        )
-        user.set_password(validated_data['password'])
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        role = validated_data.pop("role", "client")
+
+        user = User(**validated_data, role=role)
+        user.set_password(password)
         user.save()
         return user
 
