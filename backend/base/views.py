@@ -19,8 +19,12 @@ from .serializers import TodoSerializer, UserRegisterSerializer, UserSerializer
 
 from datetime import datetime, timedelta
 
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import AllowAny
+
 
 @api_view(['POST'])
+@authentication_classes([]) 
 @permission_classes([AllowAny])
 def register(request):
     serializer = UserRegisterSerializer(data=request.data)
