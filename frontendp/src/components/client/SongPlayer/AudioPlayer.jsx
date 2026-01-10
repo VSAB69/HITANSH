@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   FaPlay,
   FaPause,
@@ -15,16 +15,16 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [volume, setVolume] = useState(1);
+  const [volume] = useState(1);
   const [isMuted, setMuted] = useState(false);
 
   const progressRef = useRef(null);
   const refreshTimer = useRef(null);
 
   // ─────────────────────────────
-  // Fetch + auto-refresh signed URL
+  // Fetch + auto-refresh signed URL (memoized)
   // ─────────────────────────────
-  const fetchSignedUrl = async () => {
+  const fetchSignedUrl = useCallback(async () => {
     if (!audioKey) return;
 
     const res = await appApiClient.get(
@@ -37,7 +37,7 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
     const refreshInMs = res.data.expires_in * 0.8 * 1000;
     clearTimeout(refreshTimer.current);
     refreshTimer.current = setTimeout(fetchSignedUrl, refreshInMs);
-  };
+  }, [audioKey]);
 
   useEffect(() => {
     fetchSignedUrl();
@@ -45,7 +45,7 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
     return () => {
       clearTimeout(refreshTimer.current);
     };
-  }, [audioKey]);
+  }, [fetchSignedUrl]);
 
   // ─────────────────────────────
   // Apply new signed URL safely
@@ -64,7 +64,7 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
       audio.currentTime = time;
       audio.play();
     }
-  }, [audioUrl]);
+  }, [audioUrl, audioRef]);
 
   // ─────────────────────────────
   // Audio event sync
@@ -89,7 +89,7 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("ended", onEnded);
     };
-  }, []);
+  }, [audioRef]);
 
   // ─────────────────────────────
   // Controls

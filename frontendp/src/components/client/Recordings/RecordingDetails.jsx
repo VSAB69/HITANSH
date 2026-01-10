@@ -7,32 +7,35 @@ const RecordingDetails = ({ recording }) => {
   const [audioUrl, setAudioUrl] = useState(null);
   const refreshTimer = useRef(null);
 
-  // ─────────────────────────────
-  // Fetch + auto-refresh signed URL
-  // ─────────────────────────────
-  const fetchSignedUrl = async () => {
+  useEffect(() => {
     if (!recording.audio_key) return;
 
-    try {
-      const res = await appApiClient.get(
-        `/api/media/secure/?key=${encodeURIComponent(recording.audio_key)}`
-      );
+    let cancelled = false;
 
-      setAudioUrl(res.data.url);
+    const fetchSignedUrl = async () => {
+      try {
+        const res = await appApiClient.get(
+          `/api/media/secure/?key=${encodeURIComponent(recording.audio_key)}`
+        );
 
-      // Refresh at 80% of expiry
-      const refreshInMs = res.data.expires_in * 0.8 * 1000;
-      clearTimeout(refreshTimer.current);
-      refreshTimer.current = setTimeout(fetchSignedUrl, refreshInMs);
-    } catch (err) {
-      console.error("Failed to load recording", err);
-    }
-  };
+        if (cancelled) return;
 
-  useEffect(() => {
+        setAudioUrl(res.data.url);
+
+        // Refresh at 80% of expiry
+        const refreshInMs = res.data.expires_in * 0.8 * 1000;
+
+        clearTimeout(refreshTimer.current);
+        refreshTimer.current = setTimeout(fetchSignedUrl, refreshInMs);
+      } catch (err) {
+        console.error("Failed to load recording", err);
+      }
+    };
+
     fetchSignedUrl();
 
     return () => {
+      cancelled = true;
       clearTimeout(refreshTimer.current);
     };
   }, [recording.audio_key]);
