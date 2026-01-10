@@ -18,6 +18,11 @@ from .serializers import (
 # Helpers
 # ─────────────────────────────────────────────
 
+def get_cookie_domain():
+    if settings.DEBUG:
+        return None
+    return "cadencea-backend.onrender.com"
+
 def is_secure_cookie():
     """
     Secure cookies only in production (HTTPS)
