@@ -133,8 +133,9 @@ SIMPLE_JWT = {
 
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.onrender.com",
-    "https://*.pages.dev",
+    "http://cadencea-backend.onrender.com",
+    "https://hitansh.pages.dev",
+    "https://d3e0a155.hitansh.pages.dev",
 ]
 
 
