@@ -87,10 +87,13 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://cadencea-backend.onrender.com",
-    "https://hitansh.pages.dev",
-    "https://d3e0a155.hitansh.pages.dev",
+    "http://localhost:3000",
 ]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.hitansh\.pages\.dev$",
+]
+
 
 CORS_ALLOW_CREDENTIALS = True
 AUTH_USER_MODEL = 'base.User'
@@ -122,22 +125,19 @@ SIMPLE_JWT = {
     "AUTH_COOKIE": "access_token",
     "AUTH_COOKIE_REFRESH": "refresh_token",
 
-    "AUTH_COOKIE_SECURE": not DEBUG,
+    "AUTH_COOKIE_SECURE": True,
     "AUTH_COOKIE_HTTP_ONLY": True,
+    "AUTH_COOKIE_SAMESITE": "None",
     "AUTH_COOKIE_PATH": "/",
-
-    # 🔥 REQUIRED for cross-domain auth
-    "AUTH_COOKIE_SAMESITE": "None" if not DEBUG else "Lax",
-
 }
 
 
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://cadencea-backend.onrender.com",
-    "https://hitansh.pages.dev",
-    "https://d3e0a155.hitansh.pages.dev",
+    "https://*.hitansh.pages.dev",
+    "https://*.onrender.com",
 ]
+
 
 
 
