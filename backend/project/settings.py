@@ -87,8 +87,9 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://0knfjgj8-3000.inc1.devtunnels.ms"
+    "http://cadencea-backend.onrender.com",
+    "https://hitansh.pages.dev",
+    "https://d3e0a155.hitansh.pages.dev",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
