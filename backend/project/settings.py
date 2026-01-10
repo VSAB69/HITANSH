@@ -23,7 +23,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    ".onrender.com",
+    "https://cadencea-backend.onrender.com"
 ]
 
 
@@ -88,6 +88,7 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://cadencea-backend.onrender.com"
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
@@ -135,7 +136,8 @@ SIMPLE_JWT = {
 
 CSRF_TRUSTED_ORIGINS = [
     "https://*.hitansh.pages.dev",
-    "https://*.onrender.com",
+    "https://cadencea-backend.onrender.com",
+    
 ]
 
 
