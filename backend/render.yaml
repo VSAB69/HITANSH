@@ -2,9 +2,19 @@ services:
   - type: web
     name: cadencea-backend
     env: python
+    plan: free
+
+    rootDir: backend
+
     buildCommand: |
-      apt-get update
-      apt-get install -y ffmpeg
       pip install -r requirements.txt
-      python manage.py collectstatic --noinput
-    startCommand: gunicorn project.wsgi:application
+
+    startCommand: |
+      gunicorn project.wsgi:application
+
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: project.settings
+
+    aptPackages:
+      - ffmpeg
