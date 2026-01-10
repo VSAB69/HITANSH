@@ -4,6 +4,9 @@ services:
     env: python
     plan: free
 
+    runtime: python
+    pythonVersion: 3.11.9
+
     rootDir: backend
 
     buildCommand: |
