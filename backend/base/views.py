@@ -30,13 +30,6 @@ def is_secure_cookie():
     return not settings.DEBUG
 
 
-def get_cookie_domain():
-    """
-    Required for cross-subdomain auth (Pages → Render)
-    """
-    if settings.DEBUG:
-        return None  # localhost
-    return ".onrender.com"
 
 
 def get_cookie_kwargs():
