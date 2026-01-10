@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: cadencea-backend
+    env: python
+    buildCommand: |
+      apt-get update
+      apt-get install -y ffmpeg
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn project.wsgi:application

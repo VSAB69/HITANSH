@@ -12,3 +12,4 @@ gunicorn
 django-filter
 razorpay
 Pillow
+pydub
