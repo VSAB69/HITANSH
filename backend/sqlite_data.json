@@ -1,0 +1,199 @@
+[
+{
+  "model": "sessions.session",
+  "pk": "e0wtse7ehh0d3wkinu7mfa03j3tbstdn",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAUBf-FtSEULgVduu83kPsAWzUlKe3K-O_apAvdnpk5L5VwW8e0tbykSdRFder0uxHyI887kDvOt6q5zusykd4VfdCmhyr5eT3cv4MR2_itgwEpTnoQ8YEMOlsKM1gLGTxmE9FD5kgFHETxYFk6SxwoGE_nvqj3B_UdOFg:1vX7mu:ABrm47b2-Wu-kgTqUA3rKEyrUaAHAVjnQXk4IyeXE3s",
+    "expire_date": "2026-01-04T00:59:08.921Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "q9mcaffeg8p88556bnlxga9e692kqf2r",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAUBf-FtSEULgVduu83kPsAWzUlKe3K-O_apAvdnpk5L5VwW8e0tbykSdRFder0uxHyI887kDvOt6q5zusykd4VfdCmhyr5eT3cv4MR2_itgwEpTnoQ8YEMOlsKM1gLGTxmE9FD5kgFHETxYFk6SxwoGE_nvqj3B_UdOFg:1vSaSF:bYAORMqdH2l0E9m4FhIz37DZvO0yZ0gzV3FctmBreEY",
+    "expire_date": "2025-12-22T12:35:03.197Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "uv5s2in7l6agqnmgl9tshxnmn3t6awbi",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAUBf-FtSEULgVduu83kPsAWzUlKe3K-O_apAvdnpk5L5VwW8e0tbykSdRFder0uxHyI887kDvOt6q5zusykd4VfdCmhyr5eT3cv4MR2_itgwEpTnoQ8YEMOlsKM1gLGTxmE9FD5kgFHETxYFk6SxwoGE_nvqj3B_UdOFg:1vXTA9:1LNW8w_eFU0BHJXUM9y-PGkClfGrVJ-pD0kxyghpbY4",
+    "expire_date": "2026-01-04T23:48:33.385Z"
+  }
+},
+{
+  "model": "token_blacklist.blacklistedtoken",
+  "pk": 1,
+  "fields": {
+    "token": 2,
+    "blacklisted_at": "2025-12-08T13:59:01.686Z"
+  }
+},
+{
+  "model": "token_blacklist.blacklistedtoken",
+  "pk": 2,
+  "fields": {
+    "token": 19,
+    "blacklisted_at": "2025-12-21T01:42:37.775Z"
+  }
+},
+{
+  "model": "token_blacklist.blacklistedtoken",
+  "pk": 3,
+  "fields": {
+    "token": 20,
+    "blacklisted_at": "2025-12-21T01:46:27.525Z"
+  }
+},
+{
+  "model": "token_blacklist.blacklistedtoken",
+  "pk": 4,
+  "fields": {
+    "token": 22,
+    "blacklisted_at": "2025-12-21T06:08:53.391Z"
+  }
+},
+{
+  "model": "token_blacklist.blacklistedtoken",
+  "pk": 5,
+  "fields": {
+    "token": 25,
+    "blacklisted_at": "2025-12-21T06:29:30.209Z"
+  }
+},
+{
+  "model": "token_blacklist.blacklistedtoken",
+  "pk": 6,
+  "fields": {
+    "token": 26,
+    "blacklisted_at": "2025-12-21T06:44:42.233Z"
+  }
+},
+{
+  "model": "base.user",
+  "fields": {
+    "password": "pbkdf2_sha256$390000$jwBKKU7XLHHtOKHaEV9q2c$M5M/ena27knXjfBU+990W8sxluliAZ3d+gVwkGNTYaE=",
+    "last_login": "2025-12-21T23:48:33.224Z",
+    "is_superuser": true,
+    "username": "ani",
+    "first_name": "",
+    "last_name": "",
+    "email": "ani@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-12-08T12:34:41.302Z",
+    "role": "client",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "base.user",
+  "fields": {
+    "password": "pbkdf2_sha256$390000$kMi1wKL1zJFXTOk1uEq0Mo$UvmkmwC4nrdUw/h5fuOAbkpJLCEVIO0+XamUOumPlxc=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "vsab",
+    "first_name": "",
+    "last_name": "",
+    "email": "vsabidk@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-01-04T03:24:34.621Z",
+    "role": "client",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "base.user",
+  "fields": {
+    "password": "pbkdf2_sha256$390000$eUHPGnKBJIy1la9JmFGXMd$RusTclzL6O7vJOpnRvujFbTH/jM6DEeIVC7pOTppSGo=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "amith",
+    "first_name": "",
+    "last_name": "",
+    "email": "amith@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-01-04T04:02:45.215Z",
+    "role": "client",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "app.artist",
+  "pk": 1,
+  "fields": {
+    "name": "idk"
+  }
+},
+{
+  "model": "app.artist",
+  "pk": 2,
+  "fields": {
+    "name": "idk"
+  }
+},
+{
+  "model": "app.artist",
+  "pk": 3,
+  "fields": {
+    "name": "Arjit Singh"
+  }
+},
+{
+  "model": "app.artist",
+  "pk": 4,
+  "fields": {
+    "name": "Billy Joel"
+  }
+},
+{
+  "model": "app.song",
+  "pk": 7,
+  "fields": {
+    "title": "Tum Hi Ho",
+    "artist": 3,
+    "language": "Hindi",
+    "genre": "Love",
+    "cover_image": "song_covers/Aashiqui_2.jpeg",
+    "audio_file": "songs/audio/Tum_Hi_Ho_wbX6mp0.mp3",
+    "lrc_file": "songs/lyrics/tumhiho_oEpet4E.lrc",
+    "duration": 230,
+    "uploaded_by": [
+      "ani"
+    ]
+  }
+},
+{
+  "model": "app.song",
+  "pk": 8,
+  "fields": {
+    "title": "Vienna",
+    "artist": null,
+    "language": "English",
+    "genre": "",
+    "cover_image": "song_covers/Billy_Joel_-_The_Stranger_Cover.jpg",
+    "audio_file": "songs/audio/Billy_Joel_-_Vienna_Karaoke_Karaoke.mp3",
+    "lrc_file": "songs/lyrics/Billy_Joel_-_Vienna.lrc",
+    "duration": 100,
+    "uploaded_by": [
+      "ani"
+    ]
+  }
+},
+{
+  "model": "app.song",
+  "pk": 9,
+  "fields": {
+    "title": "Neele Neele Ambar Par",
+    "artist": null,
+    "language": "Hindi",
+    "genre": "",
+    "cover_image": "song_covers/neele.png",
+    "audio_file": 
