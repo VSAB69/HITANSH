@@ -1,9 +1,9 @@
 import axios from "axios";
 
 // 1. Use localhost instead of 127.0.0.1 to avoid cookie domain mismatch
-const AUTH_BASE_URL = "http://localhost:8000/auth/";
+const AUTH_BASE_URL = "https://cadencea-backend.onrender.com/auth/";
 // 2. FIX: Set app base URL to the root, as requested
-const APP_BASE_URL = "http://localhost:8000/";
+const APP_BASE_URL = "https://cadencea-backend.onrender.com";
 
 // 3. Create an Axios client for AUTH functions
 const authApiClient = axios.create({
