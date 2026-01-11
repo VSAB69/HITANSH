@@ -23,8 +23,9 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    "https://cadencea-backend.onrender.com"
+    "cadencea-backend.onrender.com",
 ]
+
 
 
 import os
@@ -88,12 +89,15 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "https://cadencea-backend.onrender.com"
+    "https://hitansh.pages.dev",
 ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.hitansh\.pages\.dev$",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
 
 
 CORS_ALLOW_CREDENTIALS = True
@@ -135,10 +139,16 @@ SIMPLE_JWT = {
 
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://hitansh.pages.dev",
     "https://*.hitansh.pages.dev",
     "https://cadencea-backend.onrender.com",
-    
 ]
+
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "None"
+
 
 
 
@@ -230,11 +240,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-SESSION_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
-CSRF_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
 
-CSRF_COOKIE_SECURE = not DEBUG
-SESSION_COOKIE_SECURE = not DEBUG
 
 
 # Default primary key field type
