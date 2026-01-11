@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User } from "lucide-react";
-import "./authbg.css";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -27,49 +26,44 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-bg-container no-scroll-bg">
-      {/* 🌌 CONTINUOUS BACKGROUND LAYERS */}
-      <div className="animated-gradient-layer" />
-      <div className="animated-mesh" />
-      <div className="orb orb1" />
-      <div className="orb orb2" />
-      <div className="orb orb3" />
-      <div className="floating-particles" />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-navy-night p-6">
+      {/* Background decorations */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-20 left-20 w-64 h-64 bg-crimson-pink/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-royal-blue/10 rounded-full blur-3xl" />
+      </div>
 
-      {/* 🔥 APP TITLE */}
+      {/* Logo */}
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="unify-title"
+        className="relative z-10 text-4xl font-bold mb-8"
       >
-        <motion.span
-          animate={{
-            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-          }}
-          transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-          className="unify-gradient"
-        >
-          CADENCEA
-        </motion.span>
+        <span className="text-crimson-pink">Caden</span>
+        <span className="text-accent">cea</span>
       </motion.h1>
 
-      {/* 📝 REGISTER CARD */}
+      {/* Register Card */}
       <motion.div
         initial={{ opacity: 0, y: 50, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="auth-card relative z-10"
+        className="relative z-10 w-full max-w-md card-glass p-8"
       >
-        <h2 className="auth-title">Create Account</h2>
-        <p className="auth-sub">Join CADENCEA and start singing 🎶</p>
+        <h2 className="text-2xl font-bold text-foreground text-center mb-2">
+          Create Account
+        </h2>
+        <p className="text-muted-foreground text-center mb-8">
+          Join Cadencea and start singing
+        </p>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Username */}
-          <div className="input-wrap">
-            <User className="input-icon" />
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
-              className="auth-input"
+              className="w-full pl-11 pr-4 py-3 rounded-lg bg-secondary/30 border border-border/50 focus:border-crimson-pink/50 transition-colors text-foreground placeholder-muted-foreground focus:outline-none"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -77,10 +71,10 @@ export default function Register() {
           </div>
 
           {/* Email */}
-          <div className="input-wrap">
-            <Mail className="input-icon" />
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
-              className="auth-input"
+              className="w-full pl-11 pr-4 py-3 rounded-lg bg-secondary/30 border border-border/50 focus:border-crimson-pink/50 transition-colors text-foreground placeholder-muted-foreground focus:outline-none"
               placeholder="Email"
               type="email"
               value={email}
@@ -89,10 +83,10 @@ export default function Register() {
           </div>
 
           {/* Password */}
-          <div className="input-wrap">
-            <Lock className="input-icon" />
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
-              className="auth-input"
+              className="w-full pl-11 pr-4 py-3 rounded-lg bg-secondary/30 border border-border/50 focus:border-crimson-pink/50 transition-colors text-foreground placeholder-muted-foreground focus:outline-none"
               placeholder="Password"
               type="password"
               value={password}
@@ -101,10 +95,10 @@ export default function Register() {
           </div>
 
           {/* Confirm Password */}
-          <div className="input-wrap">
-            <Lock className="input-icon" />
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
-              className="auth-input"
+              className="w-full pl-11 pr-4 py-3 rounded-lg bg-secondary/30 border border-border/50 focus:border-crimson-pink/50 transition-colors text-foreground placeholder-muted-foreground focus:outline-none"
               placeholder="Confirm Password"
               type="password"
               value={passwordConfirm}
@@ -117,7 +111,7 @@ export default function Register() {
             <motion.p
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="auth-error"
+              className="text-crimson-pink text-sm text-center"
             >
               {error}
             </motion.p>
@@ -125,17 +119,20 @@ export default function Register() {
 
           {/* Register Button */}
           <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleRegister}
-            className="auth-btn"
+            className="w-full btn-gradient py-3 rounded-lg font-semibold mt-2"
           >
             Register
           </motion.button>
 
-          <p className="login-text">
+          <p className="text-center text-muted-foreground mt-4">
             Already have an account?{" "}
-            <span onClick={() => navigate("/login")} className="login-link">
+            <span
+              onClick={() => navigate("/login")}
+              className="text-crimson-pink hover:text-crimson-pink/80 cursor-pointer font-medium"
+            >
               Sign in
             </span>
           </p>

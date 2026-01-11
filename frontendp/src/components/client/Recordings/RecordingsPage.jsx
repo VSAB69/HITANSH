@@ -1,82 +1,107 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Mic, Music } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import ClientService from "../ClientService";
 import RecordingCard from "./RecordingCard";
 
 const RecordingsPage = () => {
   const [recordings, setRecordings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  const fetchRecordings = () => {
+    setLoading(true);
+    setError(null);
+    ClientService.getMyRecordings()
+      .then((res) => setRecordings(res.data || []))
+      .catch((err) => setError("Failed to load recordings"))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    ClientService.getMyRecordings()
-      .then((res) => setRecordings(res.data))
-      .finally(() => setLoading(false));
+    fetchRecordings();
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white overflow-hidden">
-      {/* 🌌 Ambient animated background */}
-      <div className="absolute inset-0">
-        <motion.div
-          animate={{ opacity: [0.4, 0.6, 0.4] }}
-          transition={{ duration: 12, repeat: Infinity }}
-          className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(168,85,247,0.25),transparent_40%),radial-gradient(circle_at_80%_20%,rgba(99,102,241,0.25),transparent_40%),radial-gradient(circle_at_50%_80%,rgba(139,92,246,0.25),transparent_40%)]"
-        />
-
-        <motion.div
-          animate={{ y: [0, -40, 0], x: [0, 30, 0] }}
-          transition={{ duration: 20, repeat: Infinity }}
-          className="absolute top-20 left-16 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ y: [0, 50, 0], x: [0, -30, 0] }}
-          transition={{ duration: 24, repeat: Infinity }}
-          className="absolute bottom-32 right-24 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl"
-        />
+    <div className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 right-20 w-64 h-64 bg-crimson-pink/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-80 h-80 bg-royal-blue/10 rounded-full blur-3xl" />
       </div>
 
-      {/* 🎤 CONTENT */}
+      {/* Content */}
       <div className="relative z-10 px-6 py-10 max-w-5xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="mb-12"
+          transition={{ duration: 0.5 }}
+          className="mb-10 flex items-center gap-4"
         >
-          <h1 className="text-4xl md:text-5xl font-extrabold text-purple-300 mb-3">
-            My Recordings 🎙️
-          </h1>
-          <p className="text-gray-300 text-lg">
-            Relive your performances, play them back, or download anytime.
-          </p>
+          <div className="w-12 h-12 rounded-xl bg-crimson-pink/20 flex items-center justify-center">
+            <Mic className="w-6 h-6 text-crimson-pink" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold">
+              <span className="text-gradient">My Recordings</span>
+            </h1>
+            <p className="text-muted-foreground">
+              Your karaoke performances
+            </p>
+          </div>
         </motion.div>
 
-        {/* Loader */}
+        {/* Loading */}
         {loading && (
-          <motion.div
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="text-center text-purple-300 text-xl mt-20"
-          >
-            Loading recordings…
-          </motion.div>
+          <div className="text-center text-muted-foreground mt-20">
+            Loading recordings...
+          </div>
+        )}
+
+        {/* Error */}
+        {error && !loading && (
+          <div className="text-center mt-20">
+            <p className="text-crimson-pink mb-4">{error}</p>
+            <button
+              onClick={fetchRecordings}
+              className="btn-gradient px-6 py-2 rounded-lg"
+            >
+              Try Again
+            </button>
+          </div>
         )}
 
         {/* Empty State */}
-        {!loading && recordings.length === 0 && (
-          <motion.p
+        {!loading && !error && recordings.length === 0 && (
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-gray-400 text-center mt-20"
+            className="card-glass p-12 text-center mt-10"
           >
-            You haven’t recorded anything yet 🎶
-          </motion.p>
+            <div className="w-16 h-16 rounded-xl bg-secondary/30 flex items-center justify-center mx-auto mb-6">
+              <Music className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              No recordings yet
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Start singing your favorite songs to create your first recording
+            </p>
+            <button
+              onClick={() => navigate("/songs")}
+              className="btn-gradient px-6 py-3 rounded-lg font-medium"
+            >
+              Browse Songs
+            </button>
+          </motion.div>
         )}
 
         {/* Recordings List */}
-        {!loading && recordings.length > 0 && (
-          <div className="space-y-6">
+        {!loading && !error && recordings.length > 0 && (
+          <div className="space-y-4">
             {recordings.map((rec) => (
               <RecordingCard key={rec.id} recording={rec} />
             ))}

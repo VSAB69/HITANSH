@@ -2,7 +2,118 @@
 @tailwind components;
 @tailwind utilities;
 
-.rec-btn {
-  @apply flex items-center gap-2 px-4 py-2 rounded-lg text-white
-         transition transform active:scale-95 shadow-md;
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 240 20% 10%;
+    --foreground: 0 0% 95%;
+    --card: 240 15% 15%;
+    --card-foreground: 0 0% 95%;
+    --primary: 348 80% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 80% 22%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 240 10% 25%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 180 60% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 240 10% 25%;
+    --input: 240 10% 25%;
+    --ring: 348 80% 58%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+  }
+}
+
+@layer components {
+  .glass-effect {
+    background: rgba(26, 26, 46, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .card-glass {
+    background: rgba(26, 26, 46, 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+  }
+
+  .dropdown-opaque {
+    background: hsl(240 15% 12%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #E94560 0%, #0F3460 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .btn-gradient {
+    background: linear-gradient(135deg, #E94560 0%, #c23a52 100%);
+    color: white;
+    transition: all 0.2s ease;
+  }
+
+  .btn-gradient:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .glow-effect {
+    box-shadow: 0 0 15px rgba(233, 69, 96, 0.2);
+  }
+
+  .shadow-glass {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .rec-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    color: white;
+    transition: transform 0.15s ease;
+  }
+
+  .rec-btn:active {
+    transform: scale(0.95);
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

@@ -1,4 +1,4 @@
-#!C:\Users\MittalN\Desktop\hitansh\HITANSH\backend\.venv\Scripts\python.exe
+#!C:\Users\Hitansh Mittal\Desktop\⠀\VSCODE\HITANSH\backend\.venv\Scripts\python.exe
 
 import sys
 import json

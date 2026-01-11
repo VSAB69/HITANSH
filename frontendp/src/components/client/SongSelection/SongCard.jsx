@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Play } from "lucide-react";
+import { Play, Music } from "lucide-react";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -14,16 +14,12 @@ const SongCard = ({ song }) => {
   return (
     <motion.div
       variants={cardVariants}
-      whileHover={{ scale: 1.06 }}
-      whileTap={{ scale: 0.97 }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => navigate(`/songs/${song.id}`)}
-      className="
-        group cursor-pointer rounded-2xl overflow-hidden
-        bg-gray-900/60 border border-purple-400/20
-        shadow-lg hover:shadow-purple-900/40 transition
-      "
+      className="group cursor-pointer rounded-xl overflow-hidden card-glass transition"
     >
-      <div className="relative aspect-[1/1] overflow-hidden">
+      <div className="relative aspect-square overflow-hidden">
         {song.cover_url ? (
           <img
             src={song.cover_url}
@@ -32,20 +28,25 @@ const SongCard = ({ song }) => {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
-          <div className="w-full h-full bg-gray-800 animate-pulse" />
+          <div className="w-full h-full bg-secondary/30 flex items-center justify-center">
+            <Music className="w-12 h-12 text-muted-foreground" />
+          </div>
         )}
 
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-          <div className="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center shadow-xl">
-            <Play className="w-7 h-7 text-white ml-1" />
+          <div className="w-12 h-12 rounded-full bg-crimson-pink flex items-center justify-center shadow-lg">
+            <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
           </div>
         </div>
       </div>
 
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-white truncate">
+        <h3 className="text-base font-semibold text-foreground truncate">
           {song.title}
         </h3>
+        <p className="text-sm text-muted-foreground truncate">
+          {song.artist?.name || (typeof song.artist === 'string' ? song.artist : 'Unknown Artist')}
+        </p>
       </div>
     </motion.div>
   );

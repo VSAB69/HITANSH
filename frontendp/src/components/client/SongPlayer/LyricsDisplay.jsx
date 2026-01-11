@@ -1,70 +1,92 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import LyricsLine from "./LyricsLine";
 
 const LyricsDisplay = ({ lyrics, audioRef }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollRef = useRef(null);
+  const containerRef = useRef(null);
+  const lineRefs = useRef([]);
 
-  // Detect active lyric (but do NOT scroll)
+  // Auto-scroll to active lyric
+  const scrollToActiveLine = useCallback((index) => {
+    if (!containerRef.current || !lineRefs.current[index]) return;
+
+    const container = containerRef.current;
+    const activeLine = lineRefs.current[index];
+
+    // Calculate position to center the active line
+    const containerHeight = container.clientHeight;
+    const lineTop = activeLine.offsetTop;
+    const lineHeight = activeLine.clientHeight;
+
+    // Scroll to position the active line in the upper third of the container
+    const scrollPosition = lineTop - containerHeight / 3 + lineHeight / 2;
+
+    container.scrollTo({
+      top: Math.max(0, scrollPosition),
+      behavior: "smooth",
+    });
+  }, []);
+
+  // Detect active lyric and auto-scroll
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!audioRef.current) return;
+      if (!audioRef.current || !lyrics || lyrics.length === 0) return;
 
       const time = audioRef.current.currentTime;
+      let newIndex = 0;
 
       for (let i = 0; i < lyrics.length; i++) {
         if (time < lyrics[i].timestamp) {
-          const newIndex = i - 1 >= 0 ? i - 1 : 0;
-          setCurrentIndex(newIndex);
+          newIndex = i - 1 >= 0 ? i - 1 : 0;
           break;
         }
+        // If we're past all timestamps, show the last line
+        if (i === lyrics.length - 1) {
+          newIndex = i;
+        }
+      }
+
+      if (newIndex !== currentIndex) {
+        setCurrentIndex(newIndex);
+        scrollToActiveLine(newIndex);
       }
     }, 200);
 
     return () => clearInterval(interval);
-  }, [lyrics, audioRef]);
+  }, [lyrics, audioRef, currentIndex, scrollToActiveLine]);
+
+  // If no lyrics, show placeholder
+  if (!lyrics || lyrics.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-muted-foreground">
+        <p className="text-lg">No lyrics available</p>
+      </div>
+    );
+  }
 
   return (
     <div
-      ref={scrollRef}
-      className="
-        relative 
-        h-72 
-        overflow-y-scroll 
-        overflow-x-hidden
-        bg-gray-900/40 
-        border border-purple-400/20 
-        rounded-xl 
-        p-6 
-        shadow-inner 
-        shadow-black/40
-
-        scrollbar-hide
-      "
+      ref={containerRef}
+      className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide py-12"
     >
-      {/* Fade effect top */}
-      <div
-        className="pointer-events-none absolute top-0 left-0 w-full h-16 
-        bg-gradient-to-b from-gray-900/80 to-transparent"
-      ></div>
-
-      {/* Lyrics */}
-      <div className="space-y-4 relative z-10">
+      {/* Lyrics Lines */}
+      <div className="space-y-6 px-4">
         {lyrics.map((line, index) => (
-          <LyricsLine
+          <div
             key={index}
-            index={index}
-            text={line.text}
-            isActive={index === currentIndex}
-          />
+            ref={(el) => (lineRefs.current[index] = el)}
+          >
+            <LyricsLine
+              index={index}
+              text={line.text}
+              isActive={index === currentIndex}
+            />
+          </div>
         ))}
       </div>
 
-      {/* Fade effect bottom */}
-      <div
-        className="pointer-events-none absolute bottom-0 left-0 w-full h-16 
-        bg-gradient-to-t from-gray-900/80 to-transparent"
-      ></div>
+      {/* Spacer at bottom for scrolling past last lyric */}
+      <div className="h-64" />
     </div>
   );
 };

@@ -1,24 +1,16 @@
-import React, { useRef, useState } from "react";
-import {
-  FaMicrophone,
-  FaPause,
-  FaStop,
-  FaSave,
-  FaRedo,
-  FaSpinner,
-} from "react-icons/fa";
-import { Sliders } from "lucide-react";
+import React, { useRef, useState, forwardRef, useImperativeHandle } from "react";
+import { Mic, Pause, Square, Save, RotateCcw, Loader2, Sliders } from "lucide-react";
 import ClientService from "../ClientService";
 import StartRecordingModal from "./StartRecordingModal";
 import MixingModal from "../Mixing/MixingModal";
 
-const AudioRecorder = ({
+const AudioRecorder = forwardRef(({
   songId,
   audioRef,
   karaokeUrl,
   songTitle,
   songDuration,
-}) => {
+}, ref) => {
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -32,9 +24,14 @@ const AudioRecorder = ({
   const [showMixingModal, setShowMixingModal] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
 
-  // ─────────────────────────────
+  // Expose triggerRecord method for parent component
+  useImperativeHandle(ref, () => ({
+    triggerRecord: (choice) => {
+      handleStartChoice(choice);
+    }
+  }));
+
   // Helpers
-  // ─────────────────────────────
   const cleanupStream = () => {
     mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
     mediaStreamRef.current = null;
@@ -49,9 +46,7 @@ const AudioRecorder = ({
     setRecordingDuration(0);
   };
 
-  // ─────────────────────────────
   // Recording
-  // ─────────────────────────────
   const startMediaRecorder = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStreamRef.current = stream;
@@ -88,9 +83,7 @@ const AudioRecorder = ({
     setRecordingState("recording");
   };
 
-  // ─────────────────────────────
   // User Actions
-  // ─────────────────────────────
   const handleRecordClick = () => {
     if (!audioRef.current) return;
     setShowModal(true);
@@ -143,9 +136,7 @@ const AudioRecorder = ({
     }
   };
 
-  // ─────────────────────────────
   // UI
-  // ─────────────────────────────
   return (
     <>
       {showModal && (
@@ -168,45 +159,46 @@ const AudioRecorder = ({
         />
       )}
 
-      <div className="mt-8 p-6 rounded-2xl bg-gray-900/40 border border-purple-400/20 shadow-lg">
-        <h3 className="text-lg font-semibold text-purple-300 mb-4">
-          🎤 Recording
+      <div className="card-glass p-4 rounded-xl">
+        <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+          <Mic className="w-4 h-4" />
+          Recording
         </h3>
 
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           {recordingState === "idle" && (
             <button
               onClick={handleRecordClick}
-              className="rec-btn bg-red-600 hover:bg-red-500"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-crimson-pink hover:bg-crimson-pink/80 text-white text-sm font-medium transition-colors"
             >
-              <FaMicrophone /> Record
+              <Mic className="w-4 h-4" /> Record
             </button>
           )}
 
           {recordingState === "recording" && (
             <button
               onClick={pauseRecording}
-              className="rec-btn bg-yellow-500 hover:bg-yellow-400"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-medium transition-colors"
             >
-              <FaPause /> Pause
+              <Pause className="w-4 h-4" /> Pause
             </button>
           )}
 
           {recordingState === "paused" && (
             <button
               onClick={resumeRecording}
-              className="rec-btn bg-green-600 hover:bg-green-500"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-medium transition-colors"
             >
-              ▶ Resume
+              Resume
             </button>
           )}
 
           {(recordingState === "recording" || recordingState === "paused") && (
             <button
               onClick={stopRecording}
-              className="rec-btn bg-gray-700 hover:bg-gray-600"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
             >
-              <FaStop /> Stop
+              <Square className="w-4 h-4" /> Stop
             </button>
           )}
 
@@ -215,24 +207,24 @@ const AudioRecorder = ({
               <button
                 onClick={saveRecording}
                 disabled={uploading}
-                className={`rec-btn ${uploading
-                  ? "bg-purple-400 cursor-not-allowed"
-                  : "bg-purple-600 hover:bg-purple-500"
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${uploading
+                    ? "bg-secondary/50 cursor-not-allowed"
+                    : "bg-crimson-pink hover:bg-crimson-pink/80"
                   }`}
               >
                 {uploading ? (
-                  <FaSpinner className="animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <FaSave />
+                  <Save className="w-4 h-4" />
                 )}
                 Save
               </button>
 
-              {/* NEW: Mix Button */}
+              {/* Mix Button */}
               <button
                 onClick={() => setShowMixingModal(true)}
                 disabled={!karaokeUrl}
-                className="rec-btn bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-royal-blue hover:bg-royal-blue/80 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Sliders className="w-4 h-4" />
                 Mix
@@ -240,9 +232,9 @@ const AudioRecorder = ({
 
               <button
                 onClick={resetRecording}
-                className="rec-btn bg-gray-800 hover:bg-gray-700"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
               >
-                <FaRedo /> New Recording
+                <RotateCcw className="w-4 h-4" /> New
               </button>
             </>
           )}
@@ -255,13 +247,15 @@ const AudioRecorder = ({
         )}
 
         {success && (
-          <p className="mt-3 text-green-400 font-semibold">
-            ✅ Recording saved successfully
+          <p className="mt-3 text-green-400 text-sm font-medium">
+            Recording saved successfully
           </p>
         )}
       </div>
     </>
   );
-};
+});
+
+AudioRecorder.displayName = "AudioRecorder";
 
 export default AudioRecorder;

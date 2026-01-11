@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
+import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Play, Pause, Download, Loader2 } from "lucide-react";
+import { X, Play, Pause, Download, Loader2, Sliders } from "lucide-react";
 import DualWaveformDisplay from "./DualWaveformDisplay";
 import TimelineSlider from "./TimelineSlider";
 import VolumeControls from "./VolumeControls";
@@ -103,7 +104,8 @@ const MixingModal = ({
 
     if (!isOpen) return null;
 
-    return (
+    // Use portal to render modal at document body level
+    return ReactDOM.createPortal(
         <AnimatePresence>
             <motion.div
                 initial={{ opacity: 0 }}
@@ -122,7 +124,7 @@ const MixingModal = ({
                 >
                     {/* Header */}
                     <div className="mixing-modal-header">
-                        <h2>🎚️ Mix Your Recording</h2>
+                        <h2><Sliders size={18} className="text-crimson-pink" /> Mix Your Recording</h2>
                         <p>{songTitle}</p>
                         <button onClick={handleClose} className="close-btn">
                             <X size={18} />
@@ -186,7 +188,8 @@ const MixingModal = ({
                     </div>
                 </motion.div>
             </motion.div>
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 };
 
