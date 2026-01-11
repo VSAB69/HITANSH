@@ -54,10 +54,10 @@ export const useAudioMixer = () => {
         setIsPlaying(false);
     }, []);
 
-    // Preview playback with offset and volumes
+    // Preview playback with recording start time offset
     const playPreview = useCallback(
-        (offsetMs, karaokeVol, recordingVol) => {
-            if (!audioContextRef.current || !karaokeBufferRef.current) return;
+        (recordingStartTimeMs, karaokeVol, recordingVol) => {
+            if (!audioContextRef.current || !karaokeBufferRef.current || !recordingBufferRef.current) return;
 
             stopPreview(); // Stop any existing playback
 
@@ -68,9 +68,10 @@ export const useAudioMixer = () => {
                 ctx.resume();
             }
 
-            const offsetSec = offsetMs / 1000;
+            const recordingStartTime = recordingStartTimeMs / 1000;
+            const recordingDuration = recordingBufferRef.current.duration;
 
-            // Karaoke source
+            // Karaoke source - starts from recordingStartTime
             const karaokeSource = ctx.createBufferSource();
             karaokeSource.buffer = karaokeBufferRef.current;
             const karaokeGain = ctx.createGain();
@@ -84,93 +85,77 @@ export const useAudioMixer = () => {
             recordingGain.gain.value = recordingVol;
             recordingSource.connect(recordingGain).connect(ctx.destination);
 
-            // Start with offset
+            // Start both at the same time, but karaoke starts from offset position
             const now = ctx.currentTime;
-            if (offsetSec >= 0) {
-                karaokeSource.start(now);
-                recordingSource.start(now + offsetSec);
-            } else {
-                karaokeSource.start(now + Math.abs(offsetSec));
-                recordingSource.start(now);
-            }
+            karaokeSource.start(now, recordingStartTime, recordingDuration);
+            recordingSource.start(now);
 
             sourcesRef.current = [karaokeSource, recordingSource];
             setIsPlaying(true);
 
-            // Auto-stop when finished
-            const duration = Math.max(
-                karaokeBufferRef.current.duration,
-                recordingBufferRef.current.duration + Math.abs(offsetSec)
-            );
-
+            // Auto-stop when recording finishes
             setTimeout(() => {
                 setIsPlaying(false);
                 sourcesRef.current = [];
-            }, duration * 1000);
+            }, recordingDuration * 1000);
         },
         [stopPreview]
     );
 
     // Export mixed audio using OfflineAudioContext
+    // Returns a WAV blob instead of downloading locally
     const exportMix = useCallback(
-        async (offsetMs, karaokeVol, recordingVol, songTitle = "mix") => {
+        async (karaokeVol, recordingVol, recordingStartTime = 0) => {
             if (!karaokeBufferRef.current || !recordingBufferRef.current) {
                 console.error("Audio buffers not loaded");
-                return;
+                return null;
             }
 
             setIsExporting(true);
 
             try {
-                const offsetSec = offsetMs / 1000;
-                const karaokeDuration = karaokeBufferRef.current.duration;
                 const recordingDuration = recordingBufferRef.current.duration;
-
-                // Calculate total duration
-                const totalDuration =
-                    offsetSec >= 0
-                        ? Math.max(karaokeDuration, recordingDuration + offsetSec)
-                        : Math.max(karaokeDuration + Math.abs(offsetSec), recordingDuration);
-
                 const sampleRate = karaokeBufferRef.current.sampleRate;
+
+                // Output duration matches the recording duration
+                const outputDuration = recordingDuration;
+
                 const offlineCtx = new OfflineAudioContext(
                     2, // stereo
-                    Math.ceil(totalDuration * sampleRate),
+                    Math.ceil(outputDuration * sampleRate),
                     sampleRate
                 );
 
-                // Karaoke
+                // Karaoke source - starts at recordingStartTime, plays for recording duration
                 const karaokeSource = offlineCtx.createBufferSource();
                 karaokeSource.buffer = karaokeBufferRef.current;
                 const karaokeGain = offlineCtx.createGain();
                 karaokeGain.gain.value = karaokeVol;
                 karaokeSource.connect(karaokeGain).connect(offlineCtx.destination);
 
-                // Recording
+                // Recording source - starts at 0, plays full duration
                 const recordingSource = offlineCtx.createBufferSource();
                 recordingSource.buffer = recordingBufferRef.current;
                 const recordingGain = offlineCtx.createGain();
                 recordingGain.gain.value = recordingVol;
                 recordingSource.connect(recordingGain).connect(offlineCtx.destination);
 
-                // Start with offset
-                if (offsetSec >= 0) {
-                    karaokeSource.start(0);
-                    recordingSource.start(offsetSec);
-                } else {
-                    karaokeSource.start(Math.abs(offsetSec));
-                    recordingSource.start(0);
-                }
+                // Start karaoke at offset from recordingStartTime
+                // This plays the karaoke from recordingStartTime for recordingDuration seconds
+                karaokeSource.start(0, recordingStartTime, recordingDuration);
+                // Recording starts at time 0 in the output
+                recordingSource.start(0);
 
                 // Render - this is async and doesn't block UI
                 const renderedBuffer = await offlineCtx.startRendering();
 
                 // Convert to WAV using async chunked processing (non-blocking)
                 const wavBlob = await audioBufferToWavAsync(renderedBuffer);
-                downloadBlob(wavBlob, `${songTitle}-mixed.wav`);
+
+                return wavBlob;
             } catch (error) {
                 console.error("Export failed:", error);
-                alert("Export failed. Please try again.");
+                throw error;
             } finally {
                 setIsExporting(false);
             }

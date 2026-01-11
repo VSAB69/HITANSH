@@ -14,6 +14,7 @@ const AudioRecorder = forwardRef(({
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const recordingStartTimeRef = useRef(0);
 
   const [recordingState, setRecordingState] = useState("idle");
   const [audioBlob, setAudioBlob] = useState(null);
@@ -23,6 +24,7 @@ const AudioRecorder = forwardRef(({
   const [showModal, setShowModal] = useState(false);
   const [showMixingModal, setShowMixingModal] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingStartTime, setRecordingStartTime] = useState(0);
 
   // Expose triggerRecord method for parent component
   useImperativeHandle(ref, () => ({
@@ -44,6 +46,7 @@ const AudioRecorder = forwardRef(({
     setAudioURL(null);
     setSuccess(false);
     setRecordingDuration(0);
+    setRecordingStartTime(0);
   };
 
   // Recording
@@ -71,9 +74,10 @@ const AudioRecorder = forwardRef(({
       setAudioURL(URL.createObjectURL(blob));
       setRecordingState("stopped");
 
-      // Calculate recording duration from audio element position
+      // Calculate recording duration from audio element position relative to start
       if (audioRef.current) {
-        setRecordingDuration(audioRef.current.currentTime);
+        const actualDuration = audioRef.current.currentTime - recordingStartTimeRef.current;
+        setRecordingDuration(actualDuration > 0 ? actualDuration : audioRef.current.currentTime);
       }
 
       cleanupStream();
@@ -91,6 +95,11 @@ const AudioRecorder = forwardRef(({
 
   const handleStartChoice = async (choice) => {
     setShowModal(false);
+
+    // Capture start time before potentially resetting to 0
+    const startTime = choice === "start" ? 0 : audioRef.current.currentTime;
+    setRecordingStartTime(startTime);
+    recordingStartTimeRef.current = startTime; // Also set ref for onstop callback
 
     if (choice === "start") {
       audioRef.current.currentTime = 0;
@@ -155,7 +164,9 @@ const AudioRecorder = forwardRef(({
           recordingUrl={audioURL}
           karaokeUrl={karaokeUrl}
           songTitle={songTitle}
+          songId={songId}
           recordingDuration={recordingDuration || songDuration}
+          recordingStartTime={recordingStartTime}
         />
       )}
 
@@ -208,8 +219,8 @@ const AudioRecorder = forwardRef(({
                 onClick={saveRecording}
                 disabled={uploading}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${uploading
-                    ? "bg-secondary/50 cursor-not-allowed"
-                    : "bg-crimson-pink hover:bg-crimson-pink/80"
+                  ? "bg-secondary/50 cursor-not-allowed"
+                  : "bg-crimson-pink hover:bg-crimson-pink/80"
                   }`}
               >
                 {uploading ? (

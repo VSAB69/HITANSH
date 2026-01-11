@@ -40,8 +40,7 @@ export default function Register() {
         transition={{ duration: 0.6 }}
         className="relative z-10 text-4xl font-bold mb-8"
       >
-        <span className="text-crimson-pink">Caden</span>
-        <span className="text-accent">cea</span>
+        <span className="text-gradient">Cadencea</span>
       </motion.h1>
 
       {/* Register Card */}

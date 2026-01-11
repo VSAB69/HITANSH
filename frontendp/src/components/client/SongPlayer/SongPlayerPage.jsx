@@ -44,10 +44,12 @@ const SongPlayerPage = () => {
   const [recordingSaved, setRecordingSaved] = useState(false);
   const [showMixingModal, setShowMixingModal] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingStartTime, setRecordingStartTime] = useState(0);
 
   // Single source of truth for audio
   const audioRef = useRef(null);
   const progressRef = useRef(null);
+  const recordingStartTimeRef = useRef(0);
 
   useEffect(() => {
     ClientService.getSongById(id).then((res) => {
@@ -82,26 +84,43 @@ const SongPlayerPage = () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime);
+    };
+    const updateDuration = () => {
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handleEnded = () => setIsPlaying(false);
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('durationchange', updateDuration);
+    audio.addEventListener('canplay', updateDuration);
+    audio.addEventListener('canplaythrough', updateDuration);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('ended', handleEnded);
 
+    // Initial check in case audio is already loaded
+    if (audio.duration && isFinite(audio.duration)) {
+      setDuration(audio.duration);
+    }
+
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('durationchange', updateDuration);
+      audio.removeEventListener('canplay', updateDuration);
+      audio.removeEventListener('canplaythrough', updateDuration);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, []);
+  }, [karaokeUrl]); // Re-register when audio source changes
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -128,9 +147,20 @@ const SongPlayerPage = () => {
 
   const handleSeek = (e) => {
     if (!progressRef.current || !audioRef.current) return;
+    const audio = audioRef.current;
+    const wasPlaying = !audio.paused;
     const rect = progressRef.current.getBoundingClientRect();
-    const percent = (e.clientX - rect.left) / rect.width;
-    audioRef.current.currentTime = percent * duration;
+    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+    // Use audio's actual duration if available, otherwise use state duration
+    const audioDuration = audio.duration && isFinite(audio.duration) ? audio.duration : duration;
+    if (audioDuration > 0) {
+      audio.currentTime = percent * audioDuration;
+      // Resume playback if was playing before seek
+      if (wasPlaying) {
+        audio.play().catch(() => { });
+      }
+    }
   };
 
   const handleVolumeChange = (e) => {
@@ -141,15 +171,27 @@ const SongPlayerPage = () => {
     }
   };
 
-  const skipBack = () => {
+  // Previous song: If more than 3s into song, restart. Otherwise could go to prev song.
+  // For now, this is a single-song player, so just restart
+  const handlePrevious = () => {
     if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
+      audioRef.current.currentTime = 0;
+      // If was playing, continue playing from start
+      if (isPlaying) {
+        audioRef.current.play().catch(() => { });
+      }
     }
   };
 
-  const skipForward = () => {
+  // Next song: For now just skip to end (triggers ended event)
+  // In a queue-based player this would go to next song
+  const handleNext = () => {
     if (audioRef.current) {
-      audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10);
+      const audio = audioRef.current;
+      const maxTime = audio.duration && isFinite(audio.duration) ? audio.duration : duration;
+      if (maxTime > 0) {
+        audio.currentTime = maxTime;
+      }
     }
   };
 
@@ -168,6 +210,7 @@ const SongPlayerPage = () => {
     setAudioURL(null);
     setRecordingSaved(false);
     setRecordingDuration(0);
+    setRecordingStartTime(0);
   };
 
   const startMediaRecorder = async () => {
@@ -195,7 +238,9 @@ const SongPlayerPage = () => {
       setRecordingState("stopped");
 
       if (audioRef.current) {
-        setRecordingDuration(audioRef.current.currentTime);
+        // Calculate actual recording duration: current position minus start position
+        const actualDuration = audioRef.current.currentTime - recordingStartTimeRef.current;
+        setRecordingDuration(actualDuration > 0 ? actualDuration : audioRef.current.currentTime);
       }
 
       cleanupStream();
@@ -207,6 +252,11 @@ const SongPlayerPage = () => {
 
   const handleStartRecording = async (fromBeginning) => {
     setShowRecordingDropdown(false);
+
+    // Capture the start time before potentially resetting to 0
+    const startTime = fromBeginning ? 0 : audioRef.current.currentTime;
+    setRecordingStartTime(startTime);
+    recordingStartTimeRef.current = startTime; // Also set ref for use in onstop callback
 
     if (fromBeginning) {
       audioRef.current.currentTime = 0;
@@ -268,12 +318,19 @@ const SongPlayerPage = () => {
     );
   }
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // Calculate progress using audio element directly if available
+  const getProgress = () => {
+    if (audioRef.current && audioRef.current.duration && isFinite(audioRef.current.duration)) {
+      return (currentTime / audioRef.current.duration) * 100;
+    }
+    return duration > 0 ? (currentTime / duration) * 100 : 0;
+  };
+  const progress = getProgress();
 
   return (
     <div className="h-screen w-full flex flex-col bg-navy-night overflow-hidden">
-      {/* Single audio element */}
-      <audio ref={audioRef} preload="metadata" crossOrigin="anonymous" />
+      {/* Single audio element - Note: crossOrigin removed to avoid CORS issues with R2 */}
+      <audio ref={audioRef} preload="auto" />
 
       {/* Background decorations */}
       <div className="fixed inset-0 pointer-events-none">
@@ -289,7 +346,9 @@ const SongPlayerPage = () => {
           recordingUrl={audioURL}
           karaokeUrl={karaokeUrl}
           songTitle={song.title}
+          songId={song.id}
           recordingDuration={recordingDuration || song.duration}
+          recordingStartTime={recordingStartTime}
         />
       )}
 
@@ -549,7 +608,7 @@ const SongPlayerPage = () => {
 
             {/* Playback Controls */}
             <div className="flex items-center gap-4">
-              <button onClick={skipBack} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={handlePrevious} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
                 <SkipBack className="w-5 h-5" />
               </button>
               <button
@@ -558,7 +617,7 @@ const SongPlayerPage = () => {
               >
                 {isPlaying ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
               </button>
-              <button onClick={skipForward} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={handleNext} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
                 <SkipForward className="w-5 h-5" />
               </button>
             </div>
@@ -566,7 +625,7 @@ const SongPlayerPage = () => {
             {/* Time & Volume */}
             <div className="flex items-center gap-4 flex-1 justify-end">
               <span className="text-sm text-muted-foreground min-w-[80px] text-right">
-                {formatTime(currentTime)} / {formatTime(duration)}
+                {formatTime(currentTime)} / {formatTime(duration || song?.duration || 0)}
               </span>
               <div className="hidden sm:flex items-center gap-2">
                 <Volume2 className="w-4 h-4 text-muted-foreground" />
