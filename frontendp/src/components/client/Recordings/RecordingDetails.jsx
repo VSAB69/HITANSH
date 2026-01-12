@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Download, Sliders } from "lucide-react";
 import { appApiClient } from "../../../api/endpoints";
@@ -12,9 +12,9 @@ const RecordingDetails = ({ recording }) => {
   const refreshTimer = useRef(null);
 
   // ─────────────────────────────
-  // Fetch + auto-refresh signed URL
+  // Fetch + auto-refresh signed URL (MEMOIZED)
   // ─────────────────────────────
-  const fetchSignedUrl = async () => {
+  const fetchSignedUrl = useCallback(async () => {
     if (!recording.audio_key) return;
 
     try {
@@ -31,7 +31,7 @@ const RecordingDetails = ({ recording }) => {
     } catch (err) {
       console.error("Failed to load recording", err);
     }
-  };
+  }, [recording.audio_key]);
 
   useEffect(() => {
     fetchSignedUrl();
@@ -39,7 +39,7 @@ const RecordingDetails = ({ recording }) => {
     return () => {
       clearTimeout(refreshTimer.current);
     };
-  }, [recording.audio_key]);
+  }, [fetchSignedUrl]);
 
   // ─────────────────────────────
   // Fetch karaoke URL for mixing
@@ -83,7 +83,6 @@ const RecordingDetails = ({ recording }) => {
       animate={{ opacity: 1 }}
       className="mt-4 bg-gray-800/40 border border-purple-400/20 rounded-xl p-4"
     >
-      {/* Mixing Modal - only render when open to prevent AbortError */}
       {showMixingModal && (
         <MixingModal
           isOpen={true}
