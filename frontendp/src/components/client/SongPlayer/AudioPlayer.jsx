@@ -1,12 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import {
-  FaPlay,
-  FaPause,
-  FaVolumeUp,
-  FaVolumeMute,
-  FaForward,
-  FaBackward,
-} from "react-icons/fa";
+import React, { useEffect, useState, useRef } from "react";
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward } from "lucide-react";
 import { appApiClient } from "../../../api/endpoints";
 
 const AudioPlayer = ({ audioKey, audioRef }) => {
@@ -15,16 +8,14 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [volume] = useState(1);
+  const [volume, setVolume] = useState(1);
   const [isMuted, setMuted] = useState(false);
 
   const progressRef = useRef(null);
   const refreshTimer = useRef(null);
 
-  // ─────────────────────────────
-  // Fetch + auto-refresh signed URL (memoized)
-  // ─────────────────────────────
-  const fetchSignedUrl = useCallback(async () => {
+  // Fetch + auto-refresh signed URL
+  const fetchSignedUrl = async () => {
     if (!audioKey) return;
 
     const res = await appApiClient.get(
@@ -37,7 +28,7 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
     const refreshInMs = res.data.expires_in * 0.8 * 1000;
     clearTimeout(refreshTimer.current);
     refreshTimer.current = setTimeout(fetchSignedUrl, refreshInMs);
-  }, [audioKey]);
+  };
 
   useEffect(() => {
     fetchSignedUrl();
@@ -45,11 +36,9 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
     return () => {
       clearTimeout(refreshTimer.current);
     };
-  }, [fetchSignedUrl]);
+  }, [audioKey]);
 
-  // ─────────────────────────────
   // Apply new signed URL safely
-  // ─────────────────────────────
   useEffect(() => {
     if (!audioUrl || !audioRef.current) return;
 
@@ -64,11 +53,9 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
       audio.currentTime = time;
       audio.play();
     }
-  }, [audioUrl, audioRef]);
+  }, [audioUrl]);
 
-  // ─────────────────────────────
   // Audio event sync
-  // ─────────────────────────────
   useEffect(() => {
     if (!audioRef.current) return;
     const audio = audioRef.current;
@@ -79,30 +66,32 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
       setProgress((audio.currentTime / audio.duration) * 100 || 0);
     };
     const onEnded = () => setIsPlaying(false);
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
 
     audio.addEventListener("loadedmetadata", onLoaded);
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("ended", onEnded);
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
 
     return () => {
       audio.removeEventListener("loadedmetadata", onLoaded);
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
     };
-  }, [audioRef]);
+  }, []);
 
-  // ─────────────────────────────
   // Controls
-  // ─────────────────────────────
   const togglePlay = async () => {
     if (!audioRef.current) return;
 
     if (isPlaying) {
       audioRef.current.pause();
-      setIsPlaying(false);
     } else {
       await audioRef.current.play();
-      setIsPlaying(true);
     }
   };
 
@@ -134,41 +123,52 @@ const AudioPlayer = ({ audioKey, audioRef }) => {
   };
 
   return (
-    <div className="relative backdrop-blur-xl bg-gray-900/40 border border-purple-500/20 rounded-2xl p-6 shadow-xl shadow-purple-900/40">
-      <div className="flex items-center justify-between">
-        <button onClick={() => skip(-10)} className="control-btn">
-          <FaBackward />
+    <div className="card-glass p-4 rounded-xl">
+      {/* Controls */}
+      <div className="flex items-center justify-center gap-6">
+        <button
+          onClick={() => skip(-10)}
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <SkipBack className="w-5 h-5" />
         </button>
 
         <button
           onClick={togglePlay}
-          className="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center"
+          className="w-12 h-12 rounded-full bg-crimson-pink hover:bg-crimson-pink/80 flex items-center justify-center text-white transition-colors"
         >
-          {isPlaying ? <FaPause /> : <FaPlay className="ml-1" />}
+          {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
         </button>
 
-        <button onClick={() => skip(10)} className="control-btn">
-          <FaForward />
+        <button
+          onClick={() => skip(10)}
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <SkipForward className="w-5 h-5" />
         </button>
 
-        <button onClick={toggleMute} className="control-btn">
-          {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+        <button
+          onClick={toggleMute}
+          className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
         </button>
       </div>
 
+      {/* Progress Bar */}
       <div className="mt-4">
         <div
           ref={progressRef}
           onClick={handleSeek}
-          className="h-3 bg-gray-700 rounded cursor-pointer"
+          className="h-2 bg-secondary/50 rounded-full cursor-pointer overflow-hidden"
         >
           <div
-            className="h-full bg-purple-400"
+            className="h-full bg-crimson-pink rounded-full transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
 
-        <div className="flex justify-between text-sm mt-2 text-purple-300">
+        <div className="flex justify-between text-xs mt-2 text-muted-foreground">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>

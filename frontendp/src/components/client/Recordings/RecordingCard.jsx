@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, Music } from "lucide-react";
+import { ChevronDown, ChevronUp, Mic } from "lucide-react";
 import RecordingDetails from "./RecordingDetails";
 
 const RecordingCard = ({ recording }) => {
@@ -11,28 +11,32 @@ const RecordingCard = ({ recording }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gray-900/60 border border-purple-400/20 rounded-2xl shadow-lg overflow-hidden"
+      className="card-glass overflow-hidden"
     >
       {/* Summary */}
       <div
         onClick={() => setOpen(!open)}
-        className="cursor-pointer p-5 flex items-center justify-between hover:bg-gray-800/40 transition"
+        className="cursor-pointer p-5 flex items-center justify-between hover:bg-secondary/20 transition"
       >
-        <div>
-          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-            <Music className="w-5 h-5 text-purple-300" />
-            {recording.song_title}
-          </h2>
-          <p className="text-sm text-gray-400 mt-1">
-            {date.toLocaleDateString()} • {date.toLocaleTimeString()} •{" "}
-            {recording.duration ? `${recording.duration}s` : "—"}
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-lg bg-crimson-pink/20 flex items-center justify-center">
+            <Mic className="w-5 h-5 text-crimson-pink" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">
+              {recording.song_title}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {date.toLocaleDateString()} - {date.toLocaleTimeString()} -{" "}
+              {recording.duration ? `${recording.duration}s` : "—"}
+            </p>
+          </div>
         </div>
 
         {open ? (
-          <ChevronUp className="w-6 h-6 text-purple-300" />
+          <ChevronUp className="w-5 h-5 text-muted-foreground" />
         ) : (
-          <ChevronDown className="w-6 h-6 text-purple-300" />
+          <ChevronDown className="w-5 h-5 text-muted-foreground" />
         )}
       </div>
 

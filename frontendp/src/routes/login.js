@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
 import { User, Lock } from "lucide-react";
-import "./authbg.css";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -17,49 +16,43 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-bg-container no-scroll-bg">
-      {/* 🌌 CONTINUOUS BACKGROUND LAYERS */}
-      <div className="animated-gradient-layer" />
-      <div className="animated-mesh" />
-      <div className="orb orb1" />
-      <div className="orb orb2" />
-      <div className="orb orb3" />
-      <div className="floating-particles" />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-navy-night p-6">
+      {/* Background decorations */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-20 left-20 w-64 h-64 bg-crimson-pink/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-royal-blue/10 rounded-full blur-3xl" />
+      </div>
 
-      {/* 🔥 APP TITLE */}
+      {/* Logo */}
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="unify-title"
+        className="relative z-10 text-4xl font-bold mb-8"
       >
-        <motion.span
-          animate={{
-            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-          }}
-          transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-          className="unify-gradient"
-        >
-          CADENCEA
-        </motion.span>
+        <span className="text-gradient">Cadencea</span>
       </motion.h1>
 
-      {/* 🔐 LOGIN CARD */}
+      {/* Login Card */}
       <motion.div
         initial={{ opacity: 0, y: 50, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="auth-card relative z-10"
+        className="relative z-10 w-full max-w-md card-glass p-8"
       >
-        <h2 className="auth-title">Welcome Back</h2>
-        <p className="auth-sub">Sing. Record. Relive your voice.</p>
+        <h2 className="text-2xl font-bold text-foreground text-center mb-2">
+          Welcome Back
+        </h2>
+        <p className="text-muted-foreground text-center mb-8">
+          Sing. Record. Relive your voice.
+        </p>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Username */}
-          <div className="input-wrap">
-            <User className="input-icon" />
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
-              className="auth-input"
+              className="w-full pl-11 pr-4 py-3 rounded-lg bg-secondary/30 border border-border/50 focus:border-crimson-pink/50 transition-colors text-foreground placeholder-muted-foreground focus:outline-none"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -67,10 +60,10 @@ export default function Login() {
           </div>
 
           {/* Password */}
-          <div className="input-wrap">
-            <Lock className="input-icon" />
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
-              className="auth-input"
+              className="w-full pl-11 pr-4 py-3 rounded-lg bg-secondary/30 border border-border/50 focus:border-crimson-pink/50 transition-colors text-foreground placeholder-muted-foreground focus:outline-none"
               placeholder="Password"
               type="password"
               value={password}
@@ -80,17 +73,20 @@ export default function Login() {
 
           {/* Login Button */}
           <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleLogin}
-            className="auth-btn"
+            className="w-full btn-gradient py-3 rounded-lg font-semibold mt-2"
           >
             Login
           </motion.button>
 
-          <p className="login-text">
-            Don’t have an account?{" "}
-            <span onClick={() => navigate("/register")} className="login-link">
+          <p className="text-center text-muted-foreground mt-4">
+            Don't have an account?{" "}
+            <span
+              onClick={() => navigate("/register")}
+              className="text-crimson-pink hover:text-crimson-pink/80 cursor-pointer font-medium"
+            >
               Sign up
             </span>
           </p>
