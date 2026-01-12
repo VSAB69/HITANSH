@@ -55,7 +55,14 @@ INSTALLED_APPS = [
 ]
 
 
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 AWS_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY")
