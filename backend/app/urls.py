@@ -6,6 +6,8 @@ from .views import (
     RecordingUploadView,
     MyRecordingsView,
     SecureMediaView,
+    GenresListView,
+    SongsByGenreView,
 )
 
 urlpatterns = [
@@ -13,6 +15,10 @@ urlpatterns = [
     path("songs/upload/", SongUploadView.as_view(), name="song-upload"),
     path("songs/", SongListView.as_view(), name="song-list"),
     path("songs/<int:pk>/", SongDetailView.as_view(), name="song-detail"),
+
+    # ─────────── Genres ───────────
+    path("genres/", GenresListView.as_view(), name="genre-list"),
+    path("genres/<str:genre>/songs/", SongsByGenreView.as_view(), name="songs-by-genre"),
 
     # ─────────── Recordings ───────────
     path("recordings/upload/", RecordingUploadView.as_view(), name="recording-upload"),

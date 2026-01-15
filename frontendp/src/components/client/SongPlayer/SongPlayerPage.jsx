@@ -5,7 +5,9 @@ import { ArrowLeft, Music, Mic, ChevronDown, Clock, Play, ListMusic, Pause, Squa
 import ClientService from "../ClientService";
 import LyricsDisplay from "./LyricsDisplay";
 import MixingModal from "../Mixing/MixingModal";
+import CustomAudioPlayer from "./CustomAudioPlayer";
 import { appApiClient } from "../../../api/endpoints";
+import { useQueue } from "../../../context/QueueContext";
 
 // Format time helper
 const formatTime = (seconds) => {
@@ -18,6 +20,7 @@ const formatTime = (seconds) => {
 const SongPlayerPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { queue, currentIndex, playNext, playPrevious, playSongFromQueue, source, setQueue } = useQueue();
   const [song, setSong] = useState(null);
   const [coverUrl, setCoverUrl] = useState(null);
   const [karaokeUrl, setKaraokeUrl] = useState(null);
@@ -25,6 +28,7 @@ const SongPlayerPage = () => {
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   // Tab state for right panel
   const [activeTab, setActiveTab] = useState("lyrics"); // "lyrics" or "queue"
@@ -50,12 +54,34 @@ const SongPlayerPage = () => {
   const audioRef = useRef(null);
   const progressRef = useRef(null);
   const recordingStartTimeRef = useRef(0);
+  const lyricsSectionRef = useRef(null);
+
+  // Scroll to lyrics section (mobile)
+  const scrollToLyrics = () => {
+    if (lyricsSectionRef.current) {
+      lyricsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   useEffect(() => {
     ClientService.getSongById(id).then((res) => {
       setSong(res.data);
     });
   }, [id]);
+
+  // Auto-populate queue if empty (e.g., direct navigation to song URL)
+  useEffect(() => {
+    if (queue.length === 0 && song) {
+      // Fetch all songs and set queue
+      ClientService.getSongs().then((res) => {
+        const allSongs = res.data || [];
+        const songIndex = allSongs.findIndex(s => s.id === parseInt(id));
+        if (allSongs.length > 0) {
+          setQueue(allSongs, songIndex >= 0 ? songIndex : 0, "all");
+        }
+      });
+    }
+  }, [queue.length, song, id, setQueue]);
 
   useEffect(() => {
     if (!song?.cover_key) return;
@@ -171,22 +197,34 @@ const SongPlayerPage = () => {
     }
   };
 
-  // Previous song: If more than 3s into song, restart. Otherwise could go to prev song.
-  // For now, this is a single-song player, so just restart
+  // Previous song: If more than 3s into song, restart. Otherwise go to prev song in queue.
   const handlePrevious = () => {
     if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      // If was playing, continue playing from start
-      if (isPlaying) {
-        audioRef.current.play().catch(() => { });
+      // If more than 3 seconds in, restart current song
+      if (audioRef.current.currentTime > 3) {
+        audioRef.current.currentTime = 0;
+        if (isPlaying) {
+          audioRef.current.play().catch(() => { });
+        }
+      } else {
+        // Try to go to previous song in queue
+        const wentToPrev = playPrevious();
+        if (!wentToPrev) {
+          // No previous song, just restart
+          audioRef.current.currentTime = 0;
+          if (isPlaying) {
+            audioRef.current.play().catch(() => { });
+          }
+        }
       }
     }
   };
 
-  // Next song: For now just skip to end (triggers ended event)
-  // In a queue-based player this would go to next song
+  // Next song: Go to next song in queue, or skip to end if no more songs
   const handleNext = () => {
-    if (audioRef.current) {
+    const wentToNext = playNext();
+    if (!wentToNext && audioRef.current) {
+      // No more songs in queue, skip to end
       const audio = audioRef.current;
       const maxTime = audio.duration && isFinite(audio.duration) ? audio.duration : duration;
       if (maxTime > 0) {
@@ -352,221 +390,308 @@ const SongPlayerPage = () => {
         />
       )}
 
-      {/* Header with Back button and Recording Controls */}
-      <div className="relative z-20 p-4 flex items-center gap-3">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 rounded-full glass-effect hover:bg-secondary/30 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+      {/* Header with Back button, Recording Controls on left, Tab Toggle on right */}
+      <div className="relative z-20 p-4 flex items-center justify-between">
+        {/* Left side: Back + Recording */}
+        <div className="flex items-center gap-3">
+          {/* Back Button */}
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full glass-effect hover:bg-secondary/30 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
 
-        {/* Recording Controls */}
-        {recordingState === "idle" && (
-          <div className="relative" ref={dropdownRef}>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowRecordingDropdown(!showRecordingDropdown)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg glass-effect hover:bg-crimson-pink/20 transition-all border border-crimson-pink/30"
-            >
-              <Mic className="w-4 h-4 text-crimson-pink" />
-              <span className="text-sm font-medium text-foreground">Start Recording</span>
-              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showRecordingDropdown ? "rotate-180" : ""}`} />
-            </motion.button>
+          {/* Recording Controls */}
+          {recordingState === "idle" && (
+            <div className="relative" ref={dropdownRef}>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowRecordingDropdown(!showRecordingDropdown)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg glass-effect hover:bg-crimson-pink/20 transition-all border border-crimson-pink/30"
+              >
+                <Mic className="w-4 h-4 text-crimson-pink" />
+                <span className="text-sm font-medium text-foreground">Start Recording</span>
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showRecordingDropdown ? "rotate-180" : ""}`} />
+              </motion.button>
 
-            {/* Dropdown Menu */}
-            <AnimatePresence>
-              {showRecordingDropdown && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 mt-2 w-64 dropdown-opaque shadow-glass z-[100] rounded-xl overflow-hidden"
-                >
-                  <div className="p-2">
-                    <p className="text-xs text-muted-foreground px-3 py-2 uppercase tracking-wide">
-                      Choose start position
-                    </p>
-                    <button
-                      onClick={() => handleStartRecording(true)}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-secondary/50 transition-colors text-left"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-crimson-pink/20 flex items-center justify-center">
-                        <Clock className="w-4 h-4 text-crimson-pink" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">From beginning (0:00)</p>
-                        <p className="text-xs text-muted-foreground">Start recording from the start</p>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => handleStartRecording(false)}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-secondary/50 transition-colors text-left"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-royal-blue/30 flex items-center justify-center">
-                        <Play className="w-4 h-4 text-accent" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">From current timestamp</p>
-                        <p className="text-xs text-muted-foreground">Start at {formatTime(currentTime)}</p>
-                      </div>
-                    </button>
-                  </div>
-                </motion.div>
+              {/* Dropdown Menu */}
+              <AnimatePresence>
+                {showRecordingDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 mt-2 w-64 dropdown-opaque shadow-glass z-[100] rounded-xl overflow-hidden"
+                  >
+                    <div className="p-2">
+                      <p className="text-xs text-muted-foreground px-3 py-2 uppercase tracking-wide">
+                        Choose start position
+                      </p>
+                      <button
+                        onClick={() => handleStartRecording(true)}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-crimson-pink/20 flex items-center justify-center">
+                          <Clock className="w-4 h-4 text-crimson-pink" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">From beginning (0:00)</p>
+                          <p className="text-xs text-muted-foreground">Start recording from the start</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleStartRecording(false)}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-secondary/50 transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-royal-blue/30 flex items-center justify-center">
+                          <Play className="w-4 h-4 text-accent" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">From current timestamp</p>
+                          <p className="text-xs text-muted-foreground">Start at {formatTime(currentTime)}</p>
+                        </div>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Recording In Progress Controls */}
+          {recordingState === "recording" && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30">
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-sm font-medium text-red-400">Recording...</span>
+              </div>
+              <button
+                onClick={pauseRecording}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-medium transition-colors"
+              >
+                <Pause className="w-4 h-4" /> Pause
+              </button>
+              <button
+                onClick={stopRecording}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
+              >
+                <Square className="w-4 h-4" /> Stop
+              </button>
+            </div>
+          )}
+
+          {recordingState === "paused" && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
+                <Pause className="w-4 h-4 text-yellow-400" />
+                <span className="text-sm font-medium text-yellow-400">Paused</span>
+              </div>
+              <button
+                onClick={resumeRecording}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-medium transition-colors"
+              >
+                Resume
+              </button>
+              <button
+                onClick={stopRecording}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
+              >
+                <Square className="w-4 h-4" /> Stop
+              </button>
+            </div>
+          )}
+
+          {recordingState === "stopped" && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={saveRecording}
+                disabled={uploading}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${uploading ? "bg-secondary/50 cursor-not-allowed" : "bg-crimson-pink hover:bg-crimson-pink/80"}`}
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </button>
+              <button
+                onClick={() => setShowMixingModal(true)}
+                disabled={!karaokeUrl}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-royal-blue hover:bg-royal-blue/80 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Sliders className="w-4 h-4" />
+                Mix
+              </button>
+              <button
+                onClick={resetRecording}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" /> New
+              </button>
+              {recordingSaved && (
+                <span className="text-green-400 text-sm font-medium">Saved!</span>
               )}
-            </AnimatePresence>
-          </div>
-        )}
-
-        {/* Recording In Progress Controls */}
-        {recordingState === "recording" && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/30">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-sm font-medium text-red-400">Recording...</span>
             </div>
-            <button
-              onClick={pauseRecording}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-medium transition-colors"
-            >
-              <Pause className="w-4 h-4" /> Pause
-            </button>
-            <button
-              onClick={stopRecording}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
-            >
-              <Square className="w-4 h-4" /> Stop
-            </button>
-          </div>
-        )}
+          )}
+        </div>
 
-        {recordingState === "paused" && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/20 border border-yellow-500/30">
-              <Pause className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-yellow-400">Paused</span>
-            </div>
+        {/* Right side: Tab Toggle (pill style) - hidden on mobile */}
+        <div className="hidden lg:flex items-center">
+          <div className="flex rounded-full glass-effect p-1">
             <button
-              onClick={resumeRecording}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-medium transition-colors"
+              onClick={() => setActiveTab("lyrics")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === "lyrics"
+                ? "bg-crimson-pink text-white"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
-              Resume
+              Lyrics
             </button>
             <button
-              onClick={stopRecording}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
+              onClick={() => setActiveTab("queue")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === "queue"
+                ? "bg-crimson-pink text-white"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
             >
-              <Square className="w-4 h-4" /> Stop
+              Queue
             </button>
           </div>
-        )}
-
-        {recordingState === "stopped" && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={saveRecording}
-              disabled={uploading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${uploading ? "bg-secondary/50 cursor-not-allowed" : "bg-crimson-pink hover:bg-crimson-pink/80"}`}
-            >
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Save
-            </button>
-            <button
-              onClick={() => setShowMixingModal(true)}
-              disabled={!karaokeUrl}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-royal-blue hover:bg-royal-blue/80 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Sliders className="w-4 h-4" />
-              Mix
-            </button>
-            <button
-              onClick={resetRecording}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" /> New
-            </button>
-            {recordingSaved && (
-              <span className="text-green-400 text-sm font-medium">Saved!</span>
-            )}
-          </div>
-        )}
+        </div>
       </div>
 
-      {/* Main Content - Two Column Layout */}
-      <div className="relative z-10 flex-1 flex flex-col lg:flex-row gap-8 px-6 pb-24 overflow-hidden min-h-0">
-        {/* Left Column: Album */}
-        <div className="flex flex-col items-center lg:w-1/2">
+      {/* Main Content */}
+      {/* Desktop: Two Column Layout | Mobile: Scrollable Sections */}
+      <div className="relative z-10 flex-1 flex flex-col lg:flex-row lg:gap-8 px-6 pb-24 overflow-y-auto lg:overflow-hidden min-h-0">
+        {/* Album Section - Full viewport on mobile, half on desktop */}
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] lg:min-h-0 lg:w-1/2 py-4">
           {/* Album Cover with glow border */}
-          <div className="card-glass p-4 rounded-2xl" style={{ boxShadow: '0 0 40px rgba(15, 52, 96, 0.4)' }}>
+          <div
+            className="card-glass p-4 rounded-2xl transition-all"
+            style={{ boxShadow: '0 0 40px rgba(15, 52, 96, 0.4)' }}
+          >
             {coverUrl ? (
               <img
                 src={coverUrl}
                 crossOrigin="anonymous"
-                className="w-64 h-64 rounded-xl object-cover"
+                className="w-48 h-48 lg:w-64 lg:h-64 rounded-xl object-cover"
                 alt="cover"
               />
             ) : (
-              <div className="w-64 h-64 rounded-xl bg-secondary/30 flex items-center justify-center">
+              <div className="w-48 h-48 lg:w-64 lg:h-64 rounded-xl bg-secondary/30 flex items-center justify-center">
                 <Music className="w-16 h-16 text-muted-foreground" />
               </div>
             )}
           </div>
 
           {/* Song Title and Artist */}
-          <h1 className="mt-6 text-2xl font-bold text-foreground text-center">
+          <h1 className="mt-4 text-2xl font-bold text-foreground text-center">
             {song.title}
           </h1>
           <p className="text-muted-foreground text-center">
             {song.artist?.name || (typeof song.artist === 'string' ? song.artist : 'Unknown Artist')}
           </p>
+          {/* Album / Genre info */}
+          <p className="text-sm text-muted-foreground/70 text-center mt-1">
+            {song.genre || 'Unknown Genre'} {song.duration ? `• ${Math.floor(song.duration / 60)}:${String(song.duration % 60).padStart(2, '0')}` : ''}
+          </p>
 
-          {/* Recording Playback (if stopped) */}
+          {/* Recording Playback (if stopped) - Custom Player */}
           {audioURL && recordingState === "stopped" && (
-            <div className="w-full max-w-md mt-4 card-glass p-4 rounded-xl">
-              <p className="text-xs text-muted-foreground mb-2">Your Recording:</p>
-              <audio controls src={audioURL} className="w-full" />
+            <div className="w-full max-w-sm mt-6">
+              <CustomAudioPlayer src={audioURL} label="Your Recording" />
             </div>
           )}
-        </div>
 
-        {/* Right Column: Tabs (Lyrics / Queue) */}
-        <div className="lg:w-1/2 flex flex-col min-h-0">
-          {/* Tab Buttons */}
-          <div className="flex gap-2 mb-4">
+          {/* Mobile: Lyrics + Queue buttons side by side */}
+          <div className="lg:hidden mt-8 flex items-center gap-3">
+            {/* Lyrics button */}
             <button
-              onClick={() => setActiveTab("lyrics")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "lyrics"
+              onClick={() => {
+                setActiveTab("lyrics");
+                scrollToLyrics();
+              }}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${activeTab === "lyrics"
                 ? "bg-crimson-pink text-white"
-                : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
-                }`}
+                : "glass-effect text-muted-foreground hover:text-foreground"}`}
             >
               <Music className="w-4 h-4" />
               Lyrics
             </button>
+
+            {/* Queue button */}
             <button
-              onClick={() => setActiveTab("queue")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === "queue"
+              onClick={() => {
+                setActiveTab("queue");
+                scrollToLyrics();
+              }}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${activeTab === "queue"
                 ? "bg-crimson-pink text-white"
-                : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
-                }`}
+                : "glass-effect text-muted-foreground hover:text-foreground"}`}
             >
               <ListMusic className="w-4 h-4" />
               Queue
             </button>
           </div>
+        </div>
 
-          {/* Tab Content */}
-          <div className="flex-1 overflow-hidden min-h-0">
+        {/* Lyrics/Queue Section - Full viewport on mobile, half on desktop */}
+        <div ref={lyricsSectionRef} className="min-h-screen lg:min-h-0 lg:w-1/2 flex flex-col">
+
+          {/* Tab Content - allow lyrics to scroll within fixed height */}
+          <div className="flex-1 min-h-[60vh] lg:min-h-0 lg:h-full overflow-hidden">
             {activeTab === "lyrics" && (
               <LyricsDisplay lyrics={song.lyrics} audioRef={audioRef} />
             )}
             {activeTab === "queue" && (
-              <div className="p-6 h-full flex flex-col items-center justify-center text-muted-foreground">
-                <ListMusic className="w-12 h-12 mb-4 opacity-50" />
-                <p className="text-sm">Queue feature coming soon</p>
+              <div className="h-full overflow-y-auto">
+                {queue.length === 0 ? (
+                  <div className="p-6 h-full flex flex-col items-center justify-center text-muted-foreground">
+                    <ListMusic className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="text-sm">No songs in queue</p>
+                    <p className="text-xs mt-2">Play from your library to start a queue</p>
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">
+                      Playing from {source === "all" ? "All Songs" : source}
+                    </p>
+                    {queue.map((queueSong, index) => (
+                      <div
+                        key={queueSong.id}
+                        onClick={() => playSongFromQueue(index)}
+                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${index === currentIndex
+                          ? "bg-crimson-pink/20 border border-crimson-pink/30"
+                          : "hover:bg-secondary/30"
+                          }`}
+                      >
+                        <span className="text-xs text-muted-foreground w-6">{index + 1}</span>
+                        {queueSong.cover_url ? (
+                          <img
+                            src={queueSong.cover_url}
+                            alt={queueSong.title}
+                            className="w-10 h-10 rounded object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-secondary/30 flex items-center justify-center">
+                            <Music className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium truncate ${index === currentIndex ? "text-crimson-pink" : "text-foreground"}`}>
+                            {queueSong.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {queueSong.artist?.name || "Unknown Artist"}
+                          </p>
+                        </div>
+                        {index === currentIndex && (
+                          <div className="w-2 h-2 rounded-full bg-crimson-pink animate-pulse" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -589,24 +714,18 @@ const SongPlayerPage = () => {
           </div>
 
           <div className="flex items-center justify-between gap-4">
-            {/* Song Info */}
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+            {/* Left: Album Cover only */}
+            <div className="flex items-center gap-3 flex-shrink-0">
               {coverUrl ? (
-                <img src={coverUrl} className="w-12 h-12 rounded-lg object-cover" alt="cover" />
+                <img src={coverUrl} className="w-10 h-10 rounded-lg object-cover" alt="cover" />
               ) : (
-                <div className="w-12 h-12 rounded-lg bg-secondary/30 flex items-center justify-center">
-                  <Music className="w-6 h-6 text-muted-foreground" />
+                <div className="w-10 h-10 rounded-lg bg-secondary/30 flex items-center justify-center">
+                  <Music className="w-5 h-5 text-muted-foreground" />
                 </div>
               )}
-              <div className="min-w-0">
-                <p className="font-medium text-foreground truncate">{song.title}</p>
-                <p className="text-sm text-muted-foreground truncate">
-                  {song.artist?.name || 'Unknown Artist'}
-                </p>
-              </div>
             </div>
 
-            {/* Playback Controls */}
+            {/* Center: Playback Controls */}
             <div className="flex items-center gap-4">
               <button onClick={handlePrevious} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
                 <SkipBack className="w-5 h-5" />
@@ -622,22 +741,44 @@ const SongPlayerPage = () => {
               </button>
             </div>
 
-            {/* Time & Volume */}
-            <div className="flex items-center gap-4 flex-1 justify-end">
-              <span className="text-sm text-muted-foreground min-w-[80px] text-right">
+            {/* Right: Time + Volume */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {formatTime(currentTime)} / {formatTime(duration || song?.duration || 0)}
               </span>
-              <div className="hidden sm:flex items-center gap-2">
-                <Volume2 className="w-4 h-4 text-muted-foreground" />
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={volume}
-                  onChange={handleVolumeChange}
-                  className="w-20 h-1 bg-secondary/50 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
-                />
+
+              {/* Volume Control with Popup Slider */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+                  className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Volume2 className={`w-4 h-4 ${volume === 0 ? 'text-crimson-pink' : ''}`} />
+                </button>
+
+                {/* Volume Slider Popup */}
+                {showVolumeSlider && (
+                  <div className="absolute bottom-full right-0 mb-2 p-3 rounded-xl glass-effect shadow-xl">
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{Math.round(volume * 100)}%</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="w-24 h-1 bg-secondary/50 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-crimson-pink [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-lg"
+                      />
+                      <button
+                        onClick={() => setVolume(volume > 0 ? 0 : 1)}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        {volume > 0 ? 'Mute' : 'Unmute'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

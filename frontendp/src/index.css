@@ -38,7 +38,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'DM Sans', sans-serif;
     font-weight: 600;
   }
@@ -67,7 +72,7 @@
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, #E94560 0%, #0F3460 100%);
+    background: linear-gradient(90deg, #E94560 0%, #E94560 50%, #6366f1 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;

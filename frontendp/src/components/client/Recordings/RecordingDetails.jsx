@@ -1,14 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Download, Sliders } from "lucide-react";
+import { Download } from "lucide-react";
 import { appApiClient } from "../../../api/endpoints";
-import ClientService from "../ClientService";
-import MixingModal from "../Mixing/MixingModal";
+import CustomAudioPlayer from "../SongPlayer/CustomAudioPlayer";
 
 const RecordingDetails = ({ recording }) => {
   const [audioUrl, setAudioUrl] = useState(null);
-  const [karaokeUrl, setKaraokeUrl] = useState(null);
-  const [showMixingModal, setShowMixingModal] = useState(false);
   const refreshTimer = useRef(null);
 
   // ─────────────────────────────
@@ -42,28 +39,6 @@ const RecordingDetails = ({ recording }) => {
   }, [recording.audio_key]);
 
   // ─────────────────────────────
-  // Fetch karaoke URL for mixing
-  // ─────────────────────────────
-  useEffect(() => {
-    if (!recording.song) return;
-
-    ClientService.getSongById(recording.song)
-      .then((res) => {
-        if (res.data.audio_key) {
-          return appApiClient.get(
-            `/api/media/secure/?key=${encodeURIComponent(res.data.audio_key)}`
-          );
-        }
-      })
-      .then((res) => {
-        if (res?.data?.url) {
-          setKaraokeUrl(res.data.url);
-        }
-      })
-      .catch((err) => console.error("Failed to load karaoke URL", err));
-  }, [recording.song]);
-
-  // ─────────────────────────────
   // Download
   // ─────────────────────────────
   const download = () => {
@@ -81,24 +56,12 @@ const RecordingDetails = ({ recording }) => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="mt-4 bg-gray-800/40 border border-purple-400/20 rounded-xl p-4"
+      className="mt-4 space-y-4"
     >
-      {/* Mixing Modal - only render when open to prevent AbortError */}
-      {showMixingModal && (
-        <MixingModal
-          isOpen={true}
-          onClose={() => setShowMixingModal(false)}
-          recordingUrl={audioUrl}
-          karaokeUrl={karaokeUrl}
-          songTitle={recording.song_title}
-          recordingDuration={recording.duration}
-        />
-      )}
-
       {audioUrl ? (
-        <audio controls src={audioUrl} className="w-full mb-4" />
+        <CustomAudioPlayer src={audioUrl} label={recording.song_title} />
       ) : (
-        <div className="text-gray-400 mb-4">Loading recording…</div>
+        <div className="text-muted-foreground p-4 card-glass rounded-xl">Loading recording…</div>
       )}
 
       <div className="flex gap-3 flex-wrap">
@@ -108,26 +71,11 @@ const RecordingDetails = ({ recording }) => {
           onClick={download}
           disabled={!audioUrl}
           className="flex items-center gap-2 px-6 py-3 rounded-xl
-                     bg-purple-600 hover:bg-purple-500
-                     disabled:bg-purple-400 disabled:cursor-not-allowed
-                     shadow-lg shadow-purple-900/40 font-semibold"
+                     btn-gradient disabled:opacity-50 disabled:cursor-not-allowed
+                     shadow-lg shadow-crimson-pink/20 font-semibold"
         >
           <Download className="w-5 h-5" />
           Download Recording
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowMixingModal(true)}
-          disabled={!audioUrl || !karaokeUrl}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl
-                     bg-indigo-600 hover:bg-indigo-500
-                     disabled:bg-indigo-400 disabled:cursor-not-allowed
-                     shadow-lg shadow-indigo-900/40 font-semibold"
-        >
-          <Sliders className="w-5 h-5" />
-          Mix with Track
         </motion.button>
       </div>
     </motion.div>

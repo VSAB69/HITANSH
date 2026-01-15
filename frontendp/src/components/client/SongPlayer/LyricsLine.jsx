@@ -1,12 +1,14 @@
 import React from "react";
 
-const LyricsLine = ({ text, isActive }) => {
+const LyricsLine = ({ text, isActive, isPast }) => {
   return (
     <p
-      className={`text-center text-xl transition-all duration-500 ease-out
+      className={`text-center leading-relaxed transition-all duration-300 ease-out
         ${isActive
-          ? "text-crimson-pink font-bold scale-105 drop-shadow-[0_0_12px_rgba(233,69,96,0.6)]"
-          : "text-muted-foreground/60"
+          ? "text-xl md:text-2xl font-bold text-crimson-pink drop-shadow-[0_0_20px_rgba(233,69,96,0.5)]"
+          : isPast
+            ? "text-base md:text-lg text-muted-foreground/50"
+            : "text-base md:text-lg text-muted-foreground/70"
         }`}
     >
       {text}
