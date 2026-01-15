@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -31,20 +31,15 @@
   }
 
   body {
-    font-family: "DM Sans", sans-serif;
+    font-family: 'DM Sans', sans-serif;
     background: hsl(var(--background));
     color: hsl(var(--foreground));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: "DM Sans", sans-serif;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'DM Sans', sans-serif;
     font-weight: 600;
   }
 }
@@ -72,14 +67,14 @@
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+    background: linear-gradient(135deg, #E94560 0%, #0F3460 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .btn-gradient {
-    background: linear-gradient(135deg, #e94560 0%, #c23a52 100%);
+    background: linear-gradient(135deg, #E94560 0%, #c23a52 100%);
     color: white;
     transition: all 0.2s ease;
   }
