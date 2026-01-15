@@ -33,6 +33,15 @@ const LyricsDisplay = ({ lyrics, audioRef }) => {
         } else {
           break;
         }
+        // If we're past all timestamps, show the last line
+        if (i === lyrics.length - 1) {
+          newIndex = i;
+        }
+      }
+
+      if (newIndex !== currentIndex) {
+        setCurrentIndex(newIndex);
+        scrollToActiveLine(newIndex);
       }
 
       if (newIndex !== currentIndex && newIndex >= 0) {

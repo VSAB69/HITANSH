@@ -1,17 +1,21 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Download } from "lucide-react";
+import { Download, Sliders } from "lucide-react";
 import { appApiClient } from "../../../api/endpoints";
 import CustomAudioPlayer from "../SongPlayer/CustomAudioPlayer";
+import ClientService from "../ClientService";
+import MixingModal from "../Mixing/MixingModal";
 
 const RecordingDetails = ({ recording }) => {
   const [audioUrl, setAudioUrl] = useState(null);
+  const [karaokeUrl, setKaraokeUrl] = useState(null);
+  const [showMixingModal, setShowMixingModal] = useState(false);
   const refreshTimer = useRef(null);
 
   // ─────────────────────────────
-  // Fetch + auto-refresh signed URL
+  // Fetch + auto-refresh signed URL (MEMOIZED)
   // ─────────────────────────────
-  const fetchSignedUrl = async () => {
+  const fetchSignedUrl = useCallback(async () => {
     if (!recording.audio_key) return;
 
     try {
@@ -28,7 +32,7 @@ const RecordingDetails = ({ recording }) => {
     } catch (err) {
       console.error("Failed to load recording", err);
     }
-  };
+  }, [recording.audio_key]);
 
   useEffect(() => {
     fetchSignedUrl();
@@ -36,7 +40,29 @@ const RecordingDetails = ({ recording }) => {
     return () => {
       clearTimeout(refreshTimer.current);
     };
-  }, [recording.audio_key]);
+  }, [fetchSignedUrl]);
+
+  // ─────────────────────────────
+  // Fetch karaoke URL for mixing
+  // ─────────────────────────────
+  useEffect(() => {
+    if (!recording.song) return;
+
+    ClientService.getSongById(recording.song)
+      .then((res) => {
+        if (res.data.audio_key) {
+          return appApiClient.get(
+            `/api/media/secure/?key=${encodeURIComponent(res.data.audio_key)}`
+          );
+        }
+      })
+      .then((res) => {
+        if (res?.data?.url) {
+          setKaraokeUrl(res.data.url);
+        }
+      })
+      .catch((err) => console.error("Failed to load karaoke URL", err));
+  }, [recording.song]);
 
   // ─────────────────────────────
   // Download
@@ -58,6 +84,17 @@ const RecordingDetails = ({ recording }) => {
       animate={{ opacity: 1 }}
       className="mt-4 space-y-4"
     >
+      {showMixingModal && (
+        <MixingModal
+          isOpen={true}
+          onClose={() => setShowMixingModal(false)}
+          recordingUrl={audioUrl}
+          karaokeUrl={karaokeUrl}
+          songTitle={recording.song_title}
+          recordingDuration={recording.duration}
+        />
+      )}
+
       {audioUrl ? (
         <CustomAudioPlayer src={audioUrl} label={recording.song_title} />
       ) : (
