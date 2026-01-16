@@ -15,7 +15,7 @@ const GenreCard = ({ genre, onPlay }) => {
       appApiClient
         .get(`/api/media/secure/?key=${encodeURIComponent(genre.cover_key)}`)
         .then((res) => setCoverUrl(res.data.url))
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [genre.cover_key]);
 
@@ -44,8 +44,12 @@ const GenreCard = ({ genre, onPlay }) => {
 
       {/* Info */}
       <div className="p-6">
-        <h3 className="text-xl font-semibold text-foreground mb-2">{genre.name}</h3>
-        <p className="text-muted-foreground">{genre.count} {genre.count === 1 ? "song" : "songs"}</p>
+        <h3 className="text-xl font-semibold text-foreground mb-2">
+          {genre.name}
+        </h3>
+        <p className="text-muted-foreground">
+          {genre.count} {genre.count === 1 ? "song" : "songs"}
+        </p>
       </div>
     </motion.div>
   );
@@ -195,11 +199,6 @@ export const Home = () => {
               </div>
             </motion.section>
           )}
-
-          {/* Footer text */}
-          <p className="mt-4 text-sm text-muted-foreground">
-            Your ultimate karaoke experience
-          </p>
         </motion.div>
       </div>
     </div>
