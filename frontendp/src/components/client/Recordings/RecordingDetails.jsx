@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import { appApiClient } from "../../../api/endpoints";
@@ -10,7 +10,6 @@ const RecordingDetails = ({ recording }) => {
   const [audioUrl, setAudioUrl] = useState(null);
   const [karaokeUrl, setKaraokeUrl] = useState(null);
   const [showMixingModal, setShowMixingModal] = useState(false);
-  const refreshTimer = useRef(null);
 
   // ─────────────────────────────
   // Fetch + auto-refresh signed URL

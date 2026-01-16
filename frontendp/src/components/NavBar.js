@@ -1,20 +1,17 @@
 // src/components/NavBar.js
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/useAuth";
 import ClientService from "./client/ClientService";
 import Footer from "./Footer";
 
 import {
   User,
-  Home as HomeIcon,
   Music,
   Mic,
   Search,
   ChevronLeft,
   ChevronRight,
-  X,
 } from "lucide-react";
 
 // Navigation history tracking
@@ -22,27 +19,9 @@ let navigationHistory = [];
 let currentHistoryIndex = -1;
 const MAX_HISTORY = 10;
 
-// Tooltip component
-const Tooltip = ({ children, content }) => {
-  const [show, setShow] = useState(false);
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-    >
-      {children}
-      {show && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 dropdown-opaque px-3 py-1.5 shadow-glass whitespace-nowrap">
-          <p className="text-sm text-foreground">{content}</p>
-        </div>
-      )}
-    </div>
-  );
-};
-
+// ─────────────────────────────
 // Auth Dialog
+// ─────────────────────────────
 const AuthDialog = ({ open, onOpenChange }) => {
   const { user, logoutUser } = useAuth();
   const navigate = useNavigate();
@@ -121,6 +100,9 @@ const AuthDialog = ({ open, onOpenChange }) => {
   );
 };
 
+// ─────────────────────────────
+// Main NavBar
+// ─────────────────────────────
 export default function NavBar({ content }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -135,8 +117,6 @@ export default function NavBar({ content }) {
   // Navigation state
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
-
-  const isActive = (path) => location.pathname.startsWith(path);
 
   // Fetch songs for search
   useEffect(() => {
