@@ -52,7 +52,12 @@ export const login = async (username, password) => {
   return res.data;
 };
 
-export const register = async (username, email, password, role = "client") => {
+export const register = async (
+  username,
+  email,
+  password,
+  role = "client"
+) => {
   const res = await authApiClient.post("register/", {
     username,
     email,

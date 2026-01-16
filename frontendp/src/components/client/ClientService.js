@@ -8,6 +8,12 @@ const ClientService = {
   getSongById: (songId) => appApiClient.get(`/api/songs/${songId}/`),
 
   // ------------------------------------
+  // 🎹 GENRES
+  // ------------------------------------
+  getGenres: () => appApiClient.get("/api/genres/"),
+  getSongsByGenre: (genre) => appApiClient.get(`/api/genres/${encodeURIComponent(genre)}/songs/`),
+
+  // ------------------------------------
   // 🎤 RECORDINGS
   // ------------------------------------
   uploadRecording: (formData) =>

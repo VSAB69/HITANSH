@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import SongCard from "./SongCard";
+import { useQueue } from "../../../context/QueueContext";
 
 const gridVariants = {
   hidden: {},
@@ -11,7 +12,14 @@ const gridVariants = {
   },
 };
 
-const SongGrid = ({ songs }) => {
+const SongGrid = ({ songs, source = "all" }) => {
+  const { setQueue } = useQueue();
+
+  const handleSongClick = (index) => {
+    // Set the queue with all songs and start at the clicked index
+    setQueue(songs, index, source);
+  };
+
   return (
     <motion.div
       variants={gridVariants}
@@ -26,8 +34,12 @@ const SongGrid = ({ songs }) => {
         gap-6
       "
     >
-      {songs.map((song) => (
-        <SongCard key={song.id} song={song} />
+      {songs.map((song, index) => (
+        <SongCard
+          key={song.id}
+          song={song}
+          onPlay={() => handleSongClick(index)}
+        />
       ))}
     </motion.div>
   );

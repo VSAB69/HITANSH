@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/useAuth";
 import ClientService from "./client/ClientService";
+import Footer from "./Footer";
 
 import {
   Menu,
@@ -143,7 +144,6 @@ export default function NavBar({ content }) {
   const { user, logoutUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
   // Search state
@@ -236,12 +236,6 @@ export default function NavBar({ content }) {
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center">
           {/* LEFT: Nav controls + Logo */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className="md:hidden p-2 rounded-lg hover:bg-secondary/30"
-            >
-              <Menu className="w-5 h-5 text-muted-foreground" />
-            </button>
 
             {/* Back/Forward */}
             <button
@@ -332,8 +326,8 @@ export default function NavBar({ content }) {
             </div>
           </div>
 
-          {/* RIGHT: Icons */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          {/* RIGHT: Icons (hidden on mobile - shown in bottom nav) */}
+          <div className="hidden md:flex items-center gap-1 flex-shrink-0">
             <Tooltip content="All Songs">
               <button
                 onClick={() => navigate("/songs")}
@@ -360,101 +354,137 @@ export default function NavBar({ content }) {
         </div>
       </header>
 
-      {/* MOBILE DRAWER */}
-      <AnimatePresence>
-        {drawerOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setDrawerOpen(false)}
-              className="fixed inset-0 bg-black z-40"
-            />
 
-            <motion.aside
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 260, damping: 25 }}
-              className="fixed inset-y-0 left-0 z-50 w-72 bg-navy-night border-r border-border/30"
-            >
-              <div className="p-4 border-b border-border/30 flex items-center justify-between">
-                <span className="text-lg font-semibold">
-                  <span className="text-crimson-pink">Caden</span>
-                  <span className="text-accent">cea</span>
-                </span>
-                <button onClick={() => setDrawerOpen(false)} className="p-2 hover:bg-secondary/30 rounded-lg">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <ul className="p-3 space-y-1">
-                {getNavItems(user).map((item) => (
-                  <li key={item.text}>
-                    <Link
-                      to={item.path}
-                      onClick={() => setDrawerOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive(item.path)
-                        ? "bg-crimson-pink/20 text-crimson-pink"
-                        : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground"
-                        }`}
-                    >
-                      {item.icon}
-                      {item.text}
-                    </Link>
-                  </li>
-                ))}
-
-                <button
-                  onClick={handleLogout}
-                  className="mt-4 flex w-full items-center gap-3 px-4 py-3 rounded-lg hover:bg-crimson-pink/20 text-crimson-pink"
-                >
-                  <LogOut className="w-5 h-5" />
-                  Logout
-                </button>
-              </ul>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* MOBILE BOTTOM NAV */}
       <nav className="md:hidden fixed bottom-4 inset-x-0 z-50 flex justify-center">
-        <div className="bg-navy-night/90 backdrop-blur-xl border border-border/30 rounded-3xl px-6 py-3 flex items-center gap-8 shadow-xl">
-          {[
-            { icon: <HomeIcon />, path: "/home" },
-            { icon: <Music />, path: "/songs" },
-            { icon: <Mic />, path: "/recordings" },
-            { icon: <User />, path: "/profile" },
-          ].map((item, i) => {
-            const active = isActive(item.path);
+        <AnimatePresence mode="wait">
+          {searchFocused ? (
+            // Expanded Search Bar - full width
+            <motion.div
+              key="search-bar"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="mx-4 bg-navy-night/95 backdrop-blur-xl border border-border/30 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl w-full"
+            >
+              <Search className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              <input
+                type="search"
+                placeholder="Search songs..."
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                autoFocus
+                className="flex-1 bg-transparent border-none focus:outline-none text-foreground placeholder-muted-foreground text-sm"
+              />
+              <button
+                onClick={() => {
+                  setSearchFocused(false);
+                  setSearchValue("");
+                }}
+                className="p-1 rounded-full hover:bg-secondary/30"
+              >
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </motion.div>
+          ) : (
+            // Normal Bottom Nav - compact, fits icons only
+            <motion.div
+              key="nav-icons"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="bg-navy-night/90 backdrop-blur-xl border border-border/30 rounded-full px-5 py-3 flex items-center gap-5 shadow-xl"
+            >
+              {[
+                { icon: <HomeIcon />, path: "/home" },
+                { icon: <Music />, path: "/songs" },
+                { icon: <Search />, action: () => setSearchFocused(true), isSearch: true },
+                { icon: <Mic />, path: "/recordings" },
+                { icon: <User />, path: "/profile" },
+              ].map((item, i) => {
+                const active = item.path ? isActive(item.path) : false;
 
-            return (
-              <Link to={item.path} key={i} className="relative">
-                <motion.div
-                  animate={{
-                    scale: active ? 1.2 : 1,
-                    color: active ? "#E94560" : "#9ca3af",
-                  }}
-                >
-                  {React.cloneElement(item.icon, { className: "w-6 h-6" })}
-                </motion.div>
+                if (item.isSearch) {
+                  return (
+                    <button
+                      key={i}
+                      onClick={item.action}
+                      className="flex items-center justify-center"
+                    >
+                      <Search className="w-6 h-6 text-muted-foreground hover:text-foreground transition-colors" />
+                    </button>
+                  );
+                }
 
-                {active && (
-                  <motion.div
-                    layoutId="mobile-indicator"
-                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-crimson-pink rounded-full"
-                  />
-                )}
-              </Link>
-            );
-          })}
-        </div>
+                return (
+                  <Link
+                    to={item.path}
+                    key={i}
+                    className="relative flex items-center justify-center"
+                  >
+                    <motion.div
+                      animate={{
+                        scale: active ? 1.15 : 1,
+                        color: active ? "#E94560" : "#9ca3af",
+                      }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center justify-center"
+                    >
+                      {React.cloneElement(item.icon, { className: "w-6 h-6" })}
+                    </motion.div>
+                  </Link>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile Search Results Dropdown */}
+        {searchFocused && searchValue.length > 0 && (
+          <div className="absolute bottom-full mb-2 left-4 right-4 dropdown-opaque shadow-glass overflow-hidden z-50 rounded-xl max-h-64 overflow-y-auto">
+            {filteredSongs.length > 0 ? (
+              <div className="py-2">
+                {filteredSongs.map((song) => (
+                  <button
+                    key={song.id}
+                    onClick={() => handleSongClick(song)}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-secondary/50 transition-colors text-left"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-secondary/50 overflow-hidden flex-shrink-0">
+                      {song.cover_image ? (
+                        <img src={song.cover_image} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Music className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{song.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">{song.artist?.name || 'Unknown'}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 text-center text-muted-foreground text-sm">
+                No results found
+              </div>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* MAIN CONTENT */}
       <main className="flex-1 pt-14 pb-24 md:pb-0">{content}</main>
+
+      {/* FOOTER - hidden on mobile to not overlap with bottom nav */}
+      <div className="hidden md:block">
+        <Footer />
+      </div>
     </div>
   );
 }

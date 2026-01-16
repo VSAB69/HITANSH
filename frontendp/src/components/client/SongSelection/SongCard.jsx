@@ -8,15 +8,24 @@ const cardVariants = {
   show: { opacity: 1, y: 0 },
 };
 
-const SongCard = ({ song }) => {
+const SongCard = ({ song, onPlay }) => {
   const navigate = useNavigate();
+
+  const handleClick = () => {
+    // If onPlay is provided, call it first (sets the queue)
+    if (onPlay) {
+      onPlay();
+    }
+    // Then navigate to the song
+    navigate(`/songs/${song.id}`);
+  };
 
   return (
     <motion.div
       variants={cardVariants}
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
-      onClick={() => navigate(`/songs/${song.id}`)}
+      onClick={handleClick}
       className="group cursor-pointer rounded-xl overflow-hidden card-glass transition"
     >
       <div className="relative aspect-square overflow-hidden">
