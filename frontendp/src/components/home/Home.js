@@ -3,66 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Music, User, ChevronLeft, ChevronRight } from "lucide-react";
 import ClientService from "../client/ClientService";
-import { appApiClient } from "../../api/endpoints";
 import { useQueue } from "../../context/QueueContext";
-
-// Genre Card Component (inline for simplicity)
-const GenreCard = ({ genre, onPlay }) => {
-  const [coverUrl, setCoverUrl] = useState(null);
-
-  useEffect(() => {
-    if (genre.cover_key) {
-      appApiClient
-        .get(`/api/media/secure/?key=${encodeURIComponent(genre.cover_key)}`)
-        .then((res) => setCoverUrl(res.data.url))
-        .catch(() => {});
-    }
-  }, [genre.cover_key]);
-
-  return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      onClick={onPlay}
-      className="flex-shrink-0 w-72 glass-effect rounded-2xl overflow-hidden cursor-pointer group"
-    >
-      {/* Image Container */}
-      <div className="relative h-48 overflow-hidden">
-        {coverUrl ? (
-          <img
-            src={coverUrl}
-            alt={genre.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-crimson-pink/30 to-royal-blue/30 flex items-center justify-center">
-            <Music className="w-16 h-16 text-muted-foreground" />
-          </div>
-        )}
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--card))] to-transparent opacity-60" />
-      </div>
-
-      {/* Info */}
-      <div className="p-6">
-        <h3 className="text-xl font-semibold text-foreground mb-2">
-          {genre.name}
-        </h3>
-        <p className="text-muted-foreground">
-          {genre.count} {genre.count === 1 ? "song" : "songs"}
-        </p>
-      </div>
-    </motion.div>
-  );
-};
+import GenreCard from "./GenreCard";
 
 export const Home = () => {
   const navigate = useNavigate();
   const { setQueue } = useQueue();
   const scrollRef = useRef(null);
+
   const [genres, setGenres] = useState([]);
   const [loadingGenres, setLoadingGenres] = useState(true);
 
-  // Fetch genres on mount
+  // Fetch genres
   useEffect(() => {
     ClientService.getGenres()
       .then((res) => setGenres(res.data || []))
@@ -70,7 +22,7 @@ export const Home = () => {
       .finally(() => setLoadingGenres(false));
   }, []);
 
-  // Scroll handler
+  // Scroll buttons
   const scroll = (direction) => {
     if (scrollRef.current) {
       const scrollAmount = 320;
@@ -81,11 +33,12 @@ export const Home = () => {
     }
   };
 
-  // Play genre handler
+  // Play Genre
   const handlePlayGenre = async (genre) => {
     try {
       const res = await ClientService.getSongsByGenre(genre.name);
       const songs = res.data || [];
+
       if (songs.length > 0) {
         setQueue(songs, 0, genre.name);
         navigate(`/songs/${songs[0].id}`);
@@ -97,33 +50,39 @@ export const Home = () => {
 
   return (
     <div className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden">
-      {/* Background decorations */}
+      {/* Background blobs */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-20 w-64 h-64 bg-crimson-pink/10 rounded-full blur-3xl" />
         <div className="absolute bottom-32 right-24 w-72 h-72 bg-royal-blue/15 rounded-full blur-3xl" />
       </div>
 
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-3.5rem)] px-6 pt-20">
+      {/* Main */}
+      <div
+        className="relative z-10 flex flex-col items-center 
+                      min-h-[calc(100vh-3.5rem)] px-6 pt-20"
+      >
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="max-w-5xl w-full text-center"
+          className="max-w-6xl w-full"
         >
           {/* Title */}
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-center">
             <span className="text-gradient">Welcome to Cadencea</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg md:text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p
+            className="text-lg md:text-xl text-muted-foreground 
+                        mb-12 max-w-2xl mx-auto text-center"
+          >
             Sing your favorite songs, view synced lyrics, and enjoy a smooth
             karaoke experience.
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
+          {/* CTA */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -148,45 +107,48 @@ export const Home = () => {
             </motion.button>
           </div>
 
-          {/* Genre Carousel */}
+          {/* Genre Section */}
           {!loadingGenres && genres.length > 0 && (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="w-full py-8"
+              className="w-full py-8 overflow-visible"
             >
-              {/* Header with controls */}
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground text-left">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
                   <span className="text-gradient">Browse by Genre</span>
                 </h2>
-                <div className="flex items-center gap-2 md:gap-4">
+
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => scroll("left")}
-                    className="p-2 rounded-full glass-effect hover:bg-secondary/50 transition-colors"
+                    className="p-2 rounded-full bg-secondary/40 hover:bg-secondary/70 transition"
                   >
                     <ChevronLeft className="w-5 h-5 text-foreground" />
                   </button>
+
                   <button
                     onClick={() => scroll("right")}
-                    className="p-2 rounded-full glass-effect hover:bg-secondary/50 transition-colors"
+                    className="p-2 rounded-full bg-secondary/40 hover:bg-secondary/70 transition"
                   >
                     <ChevronRight className="w-5 h-5 text-foreground" />
                   </button>
+
                   <button
                     onClick={() => navigate("/songs")}
-                    className="text-crimson-pink hover:text-crimson-pink/80 font-medium transition-colors hidden sm:block"
+                    className="text-crimson-pink hover:text-crimson-pink/80 font-medium hidden sm:block"
                   >
                     See More
                   </button>
                 </div>
               </div>
 
-              {/* Scrollable container */}
+              {/* Carousel */}
               <div
                 ref={scrollRef}
-                className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+                className="flex gap-6 overflow-x-auto scroll-smooth pb-4"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
                 {genres.map((genre) => (
