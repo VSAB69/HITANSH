@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Play, Pause, Upload, Loader2, Sliders, Volume2, Music, Mic } from "lucide-react";
+import { X, Play, Pause, Upload, Loader2, Sliders, Music, Mic } from "lucide-react";
 import { useAudioMixer } from "./useAudioMixer";
 import ClientService from "../ClientService";
 import "./MixingModal.css";
