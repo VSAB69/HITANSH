@@ -108,3 +108,50 @@ class SongListView(generics.ListAPIView):
     queryset = Song.objects.select_related("artist")
     serializer_class = SongListSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+# ─────────────────────────────────────────────
+# GENRE VIEWS
+# ─────────────────────────────────────────────
+
+class GenresListView(APIView):
+    """
+    Returns list of unique genres with song counts and sample cover.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from django.db.models import Count
+        
+        genres = (
+            Song.objects
+            .exclude(genre__isnull=True)
+            .exclude(genre='')
+            .values('genre')
+            .annotate(count=Count('id'))
+            .order_by('-count')
+        )
+        
+        result = []
+        for g in genres:
+            # Get first song's cover for this genre
+            sample_song = Song.objects.filter(genre=g['genre']).first()
+            result.append({
+                'name': g['genre'],
+                'count': g['count'],
+                'cover_key': sample_song.cover_image.name if sample_song and sample_song.cover_image else None
+            })
+        
+        return Response(result)
+
+
+class SongsByGenreView(generics.ListAPIView):
+    """
+    Returns all songs for a specific genre.
+    """
+    serializer_class = SongListSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        genre = self.kwargs.get('genre')
+        return Song.objects.filter(genre__iexact=genre).select_related("artist")
